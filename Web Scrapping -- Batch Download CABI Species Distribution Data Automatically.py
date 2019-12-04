@@ -63,7 +63,7 @@ for i in np.arange(10):
     time.sleep(2)
 
     # find and click 1st button
-    driver.find_element_by_class_name("Product_export-sml").click()
+    driver.find_elements_by_class_name("Product_export-sml")[1].click()
     time.sleep(5)
 
     # find and click 2nd button
