@@ -35,13 +35,13 @@ dt["URL"][0]
 driver=webdriver.Chrome()
 url=dt["URL"][0]
 driver.get(url)
-time.sleep(2)
+time.sleep(1)
 
 # find the button where we need to click in order to download data. the class of that button in cabi named "Product_export-sml"
 button=driver.find_elements_by_class_name("Product_export-sml")
 # the function of the below code is to click that button
 button[1].click() # there are two buttons with class_name "Product_export-sml", use button[0] to download kml file, and button[1] to download csv file
-time.sleep(5) 
+time.sleep(2) 
 
 # in cabi, a new window pop up and need another click action. the class of this button is named “btn-primary”
 driver.find_element_by_class_name("btn-primary").click()
@@ -49,7 +49,7 @@ driver.quit()
 
 
 # ###### And that's it. This simple code do the magic and check your folder for the downloaded zip file. I guess the above code doesn't work well in the jupyter notebook. The loop below works well to batch download the data. 
-
+## Try to increase the number inside time.sleep() if error occurres.
 # In[ ]:
 
 
@@ -60,15 +60,15 @@ for i in np.arange(10):
     url=dt["URL"][i]
 
     driver.get(url)
-    time.sleep(2)
+    time.sleep(1)
 
     # find and click 1st button
     driver.find_elements_by_class_name("Product_export-sml")[1].click()
-    time.sleep(5)
+    time.sleep(2)
 
     # find and click 2nd button
     driver.find_element_by_class_name("btn-primary").click()
-   
+    time.sleep(3)
 
 driver.quit()
 
