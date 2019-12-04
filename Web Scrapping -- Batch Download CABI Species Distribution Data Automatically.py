@@ -38,9 +38,9 @@ driver.get(url)
 time.sleep(2)
 
 # find the button where we need to click in order to download data. the class of that button in cabi named "Product_export-sml"
-button=driver.find_element_by_class_name("Product_export-sml")
+button=driver.find_elements_by_class_name("Product_export-sml")
 # the function of the below code is to click that button
-button.click()
+button[1].click() # there are two buttons with class_name "Product_export-sml", use button[0] to download kml file, and button[1] to download csv file
 time.sleep(5) 
 
 # in cabi, a new window pop up and need another click action. the class of this button is named “btn-primary”
