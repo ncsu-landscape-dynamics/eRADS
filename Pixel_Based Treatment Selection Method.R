@@ -1,5 +1,5 @@
 
-## Define Variables ##
+## Define Function Input Variable ##
 # inf is the infested file in raster format, 
 # buffer is the buffer size around each treatment pixel
 # width is the buffer size within which the total number of uninfested host would be derived
@@ -8,6 +8,7 @@
 
 ########### Method 1 -- Randomly Select Infested Pixel for Treatment ################
 ## Randomly select infested pixels based on budget and cost per unit ##
+
 random_pixel=function(inf,buffer,budget,cost_per_meter_sq){
   
   area=budget/cost_per_meter_sq
@@ -49,6 +50,7 @@ random_pixel=function(inf,buffer,budget,cost_per_meter_sq){
 }
 # excuation example
 # treatRd_Pixel= random_pixel(inf,budget,cost_per_meter_sq,pixelArea)
+
 
 
 ########### Method 2 -- Select infested pixels for treatment based on total number 
@@ -129,7 +131,9 @@ threat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq
 ## treatTrt_Pixel= threat_pixel(inf,width=1000,ply,host,budget,cost_per_meter_sq,pixelArea)
 
 
+
 ########## Method 3 -- Select highest infested pixel  ###########
+
 Hinfest_pixel = function(inf,buffer,budget,cost_per_meter_sq,pixelArea){
   
   area=budget/cost_per_meter_sq
