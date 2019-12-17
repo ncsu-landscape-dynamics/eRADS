@@ -227,10 +227,9 @@ wvfrt_pixel = function(inf,buffer,budget, cost_per_meter_sq, pixelArea){
   ply_bf= buffer(ra_ply2,width=buffer,dissolve=F)
   
   area=budget/cost_per_meter_sq
-  n=floor(area/pixelArea)
+  n=floor(area/pixelArea)+2
   ply_bf$Cumu_Area=0
   
-  n=floor(area/pixelArea)+2
   for (i in 1:n){
     trt=gUnionCascaded(ply_bf[1:i,])
     ply_bf$Cumu_Area[i]=area(trt)
