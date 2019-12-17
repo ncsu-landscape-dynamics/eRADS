@@ -75,7 +75,7 @@ Thost <- function(ra_ply,width,ply,host){
   cl <- makeCluster(detectCores()-2)
   registerDoParallel(cl)
   
-  hostN=foreach (i=1:dim(pts)[1],.combine=rbind,.errorhandling = "pass",  .export=c('gDifference'), .packages=c('raster',"rgdal","rgeos")) %dopar% {
+  hostN=foreach (i=1:dim(ply_bf)[1],.combine=rbind,.errorhandling = "pass",  .export=c('gDifference'), .packages=c('raster',"rgdal","rgeos")) %dopar% {
     #gDifference(plybuf[i,],ply[i,])
     buff_only=gBuffer(ply_bf[i,],width=0)
     buff_only2=gDifference(buff_only, ply2)
