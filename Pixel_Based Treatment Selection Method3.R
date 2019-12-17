@@ -352,7 +352,7 @@ wvfrtHzd = function(inf,width=1000, distance_classes=6, host,buffer,budget,  cos
 
 ######## Method 6 --  based on number of uninfested host within different  ####
         ## size of buffer for each pixel, the buffer size is determined based on 
-        ## dispersal kernel and clamatic factors
+        ## dispersal kernel and climatic factors
 
 
 ## Calculate buffer size round each pixel
