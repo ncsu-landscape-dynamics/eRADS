@@ -9,9 +9,10 @@
 ########### Method 1 -- Randomly Select Infested Pixel for Treatment ################
 ## Randomly select infested pixels based on budget and cost per unit ##
 random_pixel=function(inf,buffer,budget,cost_per_meter_sq){
-  inf2=inf
+  
   area=budget/cost_per_meter_sq
   
+  inf2=inf
   k<- which(inf2[]==0)
   inf2[k]=NA
   
