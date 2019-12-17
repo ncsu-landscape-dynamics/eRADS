@@ -127,3 +127,45 @@ threat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq
 }
 ## excuation example ##
 ## treatTrt_Pixel= threat_pixel(inf,width=1000,ply,host,budget,cost_per_meter_sq,pixelArea)
+
+
+########## Method 3 -- Select highest infested pixel  ###########
+Hinfest_pixel = function(inf,buffer,budget,cost_per_meter_sq,pixelArea){
+  
+  area=budget/cost_per_meter_sq
+  
+  inf2=inf
+  k<- which(inf2[]==0)
+  inf2[k]=NA
+  inf2[inf2==0]=NA
+  
+  ra_ply=rasterToPolygons(inf2,na.rm = T,dissolve = F)
+  ra_ply$infest_level=extract(inf2,ra_ply,fun=mean)
+  
+  ra_ply2=ra_ply[order(ra_ply$infest_level,decreasing = T),]
+  ply_bf=buffer(ra_ply2,width=buffer,dissolve=F)
+  
+  
+  n=floor(area/pixelArea)
+  ply_bf$Cumu_Area=0
+  for (i in 1:n){
+    trt=gUnionCascaded(ply_bf[1:i,])
+    ply_bf$Cumu_Area[i]=area(trt)
+  }
+  
+  treatment=ply_bf[ply_bf$Cumu_Area<= area & ply_bf$Cumu_Area!=0,]
+  treatment=gUnionCascaded(treatment)
+  
+  df=area-area(treatment)
+  nontr=ply_bf[ply_bf$Cumu_Area> area,]
+  
+  if (df>0){
+    crds=gCentroid(nontr[1,])
+    crds_bf=buffer(crds,width=sqrt(df/pi))
+    treatment=gUnion(treatment,crds_bf)
+  }
+  
+  treatmentRa=rasterize( treatment,inf,field=1,background=0,getCover=T)
+  treatmentLs=list(as.matrix(treatmentRa))
+  return(treatmentLs)
+}
