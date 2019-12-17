@@ -56,6 +56,7 @@ random_pixel=function(inf,buffer,budget,cost_per_meter_sq){
 ########### Method 2 -- Select infested pixels for treatment based on total number 
         ## of uninfested host within the given width of buffer area of each pixel ##
 
+# idealy, the width should be choosen based on the dispersal ability of targeted species
 Thost <- function(inf,width=1000,ply,host){ # this function will be called by the next function
   
   inf2=inf
