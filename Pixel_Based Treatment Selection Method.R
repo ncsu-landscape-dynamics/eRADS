@@ -167,7 +167,7 @@ Hinfest_pixel = function(inf,buffer,budget,cost_per_meter_sq,pixelArea){
 
 ########## Method 4 -- Select infested pixel at wave front ###########
 
-wvfrt_pixel = function(inf,ply,buffer,budget, cost_per_meter_sq, pixelArea){
+wvfrt_pixel = function(inf,buffer,budget, cost_per_meter_sq, pixelArea){
   
   ## Derive wave front 
   
