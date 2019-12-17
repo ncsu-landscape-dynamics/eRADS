@@ -164,3 +164,62 @@ Hinfest_pixel = function(inf,buffer,budget,cost_per_meter_sq,pixelArea){
 ## excuation example ##
 ## treatTrt_Pixel= Hinfest_pixel(inf,buffer,budget,cost_per_meter_sq,pixelArea)
 
+
+########## Method 4 -- Select infested pixel at wave front ###########
+
+wvfrt_pixel = function(inf,ply,buffer,budget, cost_per_meter_sq, pixelArea){
+  
+  ## Derive wave front 
+  
+  library(concaveman)
+  
+  pts=rasterToPoints(inf,fun=function(x){x>0},spatial = T)
+  
+  crds=pts@coords
+  concave=concaveman(crds,concavity = 1)
+  p=Polygon(concave)
+  ps=Polygons(list(p),1)
+  sps=SpatialPolygons(list(ps))
+  crs(sps)=crs(pts)
+  sps=SpatialPolygonsDataFrame(sps,data=data.frame(ID=1))
+  
+  # lns is used as the wave front
+  lns=as(sps,"SpatialLinesDataFrame")
+  
+  
+  ra_ply=rasterToPolygons(inf,fun=function(x){x>0},dissolve = F)
+  distance=gDistance(lns, ra_ply, byid=T)
+  
+  ra_ply$dis_frtwv=distance[1:length(ra_ply)]
+  ra_ply2=ra_ply[order(ra_ply$dis_frtwv,decreasing = F),]
+  
+  ply_bf= buffer(ra_ply2,width=buffer,dissolve=F)
+  
+  area=budget/cost_per_meter_sq
+  n=floor(area/pixelArea)
+  ply_bf$Cumu_Area=0
+  
+  for (i in 1:n){
+    trt=gUnionCascaded(ply_bf[1:i,])
+    ply_bf$Cumu_Area[i]=area(trt)
+  }
+  
+  treatment=ply_bf[ply_bf$Cumu_Area<= area & ply_bf$Cumu_Area!=0,]
+  treatment=gUnionCascaded(treatment)
+  
+  df=area-area(treatment)
+  nontr=ply_bf[ply_bf$Cumu_Area> area,]
+  
+  if (df>0){
+    crds=gCentroid(nontr[1,])
+    crds_bf=buffer(crds,width=sqrt(df/pi))
+    treatment=gUnion(treatment,crds_bf)
+  }
+  
+  treatmentRa=rasterize(treatment,inf,field=1,background=0,getCover=T)
+  treatmentLs=list(as.matrix(treatmentRa))
+  return(treatmentLs)
+}
+
+## excuation example ##
+## wvfrt_Pixel= wvfrt_pixel(inf,ply,buffer,budget, cost_per_meter_sq, pixelArea)
