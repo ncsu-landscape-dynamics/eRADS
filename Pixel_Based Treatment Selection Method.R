@@ -57,18 +57,11 @@ random_pixel=function(inf,buffer,budget,cost_per_meter_sq){
         ## of uninfested host within the given width of buffer area of each pixel ##
 
 # idealy, the width should be choosen based on the dispersal ability of targeted species
-Thost <- function(inf,width=1000,ply,host){ # this function will be called by the next function
+Thost <- function(inf,width=1000,ply,host){
   
-  inf2=inf
+  ra_ply=rasterToPolygons(inf,fun=function(x){x>0},dissolve = F)
   
-  
-  k<- which(inf2[]==0)
-  inf2[k]=NA
-  inf2[inf2==0]=NA
-  
-  raPly=rasterToPolygons(inf2,na.rm=T,dissolve=F)
-  
-  ply_buf=buffer(raPly,width,dissolve=F)
+  ply_buf=buffer(ra_ply,width,dissolve=F)
   ply2=gUnionCascaded(ply)
   ply2=gBuffer(ply2,width=0)
   
@@ -96,14 +89,13 @@ Thost <- function(inf,width=1000,ply,host){ # this function will be called by th
   
   return(raPly2)
 }
-
 treat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq,pixelArea){
   
   area=budget/cost_per_meter_sq
   
   
-  raPly2=Thost(inf,width,ply,host)
-  ply_bf=buffer(raPly2,width=buffer,dissolve=F)
+  ra_ply=Thost(inf,width,ply,host)
+  ply_bf=buffer(ra_ply,width=buffer,dissolve=F)
   
   n=floor(area/pixelArea)
   ply_bf$Cumu_Area=0
@@ -130,23 +122,16 @@ treat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq,
   return(treatmentLs)
 }
 ## excuation example ##
-## treat_Pixel= treat_pixel(inf,width=1000,ply,host,budget,cost_per_meter_sq,pixelArea)
-
+## treatTrt_Pixel= treat_pixel(inf,width=1000,ply,host,budget,cost_per_meter_sq,pixelArea)
 
 
 ########## Method 3 -- Select highest infested pixel  ###########
-
 Hinfest_pixel = function(inf,buffer,budget,cost_per_meter_sq,pixelArea){
   
   area=budget/cost_per_meter_sq
   
-  inf2=inf
-  k<- which(inf2[]==0)
-  inf2[k]=NA
-  inf2[inf2==0]=NA
-  
-  ra_ply=rasterToPolygons(inf2,na.rm = T,dissolve = F)
-  ra_ply$infest_level=extract(inf2,ra_ply,fun=mean)
+  ra_ply=rasterToPolygons(inf,fun=function(x){x>0},dissolve = F)
+  ra_ply$infest_level=extract(inf,ra_ply,fun=mean)
   
   ra_ply2=ra_ply[order(ra_ply$infest_level,decreasing = T),]
   ply_bf=buffer(ra_ply2,width=buffer,dissolve=F)
@@ -174,4 +159,8 @@ Hinfest_pixel = function(inf,buffer,budget,cost_per_meter_sq,pixelArea){
   treatmentRa=rasterize( treatment,inf,field=1,background=0,getCover=T)
   treatmentLs=list(as.matrix(treatmentRa))
   return(treatmentLs)
+  
 }
+## excuation example ##
+## treatTrt_Pixel= Hinfest_pixel(inf,buffer,budget,cost_per_meter_sq,pixelArea)
+
