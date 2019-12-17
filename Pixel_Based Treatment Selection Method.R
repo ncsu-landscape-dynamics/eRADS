@@ -4,7 +4,7 @@
 # buffer is the buffer size around each treatment pixel
 # width is the buffer size within which the total number of uninfested host would be derived
 # ply is the polygon converted from the infested raster, the main use of ply is to exclude the infested host
-
+# pixelArea is the area of each pixel
 
 ########### Method 1 -- Randomly Select Infested Pixel for Treatment ################
 ## Randomly select infested pixels based on budget and cost per unit ##
