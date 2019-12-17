@@ -1,11 +1,11 @@
 
 ## Define Function Input Variable ##
-# inf is the infested file in raster format, 
-# buffer is the buffer size around each treatment pixel
-# width is the buffer size within which the total number of uninfested host would be derived
-# ply is the polygon converted from the infested raster, the main use of ply is to exclude the infested host
-# pixelArea is the area of each pixel
-# distance_classes is only used for Method 5 to indicate how many classes your want to cluster the infested pixel based on 
+# inf: the infested file in raster format, 
+# buffer: the buffer size around each treatment pixel
+# width: the buffer size within which the total number of uninfested host would be derived
+# ply: the polygon converted from the infested raster, the main use of ply is to exclude the infested host
+# pixelArea: the area of each pixel
+# distance_classes: only used for Method 5 to indicate how many classes your want to cluster the infested pixel based on 
   #  their distance to the wavefront.
 
 ########### Method 1 -- Randomly Select Infested Pixel for Treatment ################
