@@ -7,6 +7,8 @@
 # pixelArea: the area of each pixel
 # distance_classes: only used for Method 5 to indicate how many classes your want to cluster the infested pixel based on 
   #  their distance to the wavefront.
+# Wcoef: mean weather coefficient during the simulation period
+# Nstep: possible number of reproduction times 
 
 ########### Method 1 -- Randomly Select Infested Pixel for Treatment ################
 ## Randomly select infested pixels based on budget and cost per unit ##
