@@ -56,7 +56,7 @@ random_pixel=function(inf,buffer,budget,cost_per_meter_sq){
 ########### Method 2 -- Select infested pixels for treatment based on total number 
         ## of uninfested host within the given width of buffer area of each pixel ##
 
-Thost <- function(inf,width=1000,ply,host){
+Thost <- function(inf,width=1000,ply,host){ # this function will be called by the next function
   
   inf2=inf
   
@@ -95,7 +95,8 @@ Thost <- function(inf,width=1000,ply,host){
   
   return(raPly2)
 }
-threat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq,pixelArea){
+
+treat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq,pixelArea){
   
   area=budget/cost_per_meter_sq
   
@@ -128,7 +129,7 @@ threat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq
   return(treatmentLs)
 }
 ## excuation example ##
-## treatTrt_Pixel= threat_pixel(inf,width=1000,ply,host,budget,cost_per_meter_sq,pixelArea)
+## treat_Pixel= treat_pixel(inf,width=1000,ply,host,budget,cost_per_meter_sq,pixelArea)
 
 
 
