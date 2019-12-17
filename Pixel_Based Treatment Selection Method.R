@@ -3,9 +3,10 @@
 # inf is the infested file in raster format, 
 # buffer is the buffer size around each treatment pixel
 # width is the buffer size within which the total number of uninfested host would be derived
+# ply is the polygon converted from the infested raster, the main use of ply is to exclude the infested host
+
 
 ########### Method 1 -- Randomly Select Infested Pixel for Treatment ################
-
 ## Randomly select infested pixels based on budget and cost per unit ##
 random_pixel=function(inf,buffer,budget,cost_per_meter_sq){
   inf2=inf
