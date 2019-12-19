@@ -300,8 +300,8 @@ wvfrtHzd = function(inf,width=1000, distance_classes=6, host,buffer,budget,  cos
   
   ply_bf=buffer(ra_ply2,width=buffer,dissolve=F)
   
-  
-  n=floor(area/pixelArea)+2
+  area=budget/cost_per_meter_sq
+  n=floor(area/pixelArea)+1
   ply_bf$Cumu_Area=0
   
   for (i in 1:n){
