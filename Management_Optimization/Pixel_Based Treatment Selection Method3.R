@@ -298,7 +298,6 @@ wvfrtHzd = function(inf,width=1000, distance_classes=6, host,buffer,budget,  cos
   ra_ply2$group=group
   
   
-  # resign group name, pixels/polygons on wavefront have small group number
   ply_bf=buffer(ra_ply2,width=buffer,dissolve=F)
   
   
