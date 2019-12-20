@@ -140,14 +140,16 @@ random_pch <- function(inf,ply,budget, cost_per_meter_sq, buffer){
 
 ###################################### Method 2 -- Select infested patches/polys based on number of uninfested host within ##############
 ## a given width of constant buffer 
-threat_host <- function(ply,width,all_infested_poly,host, buffer,n_cores){
+#### Method 2 -- Select infested patches/polys based on number of uninfested host within ####
+## a given width of constant buffer 
+threat_host <- function(ply,width,all_infested_poly,host, buffer){
   
   plybuf=buffer(ply,width=width,dissolve=F)
   ply2=gUnionCascaded(all_infested_poly)
   ply2=gBuffer(ply2,width=0)
   
   
-  cl <- makeCluster(n_cores)
+  cl <- makeCluster(detectCores()-2)
   registerDoParallel(cl)
   
   host_number=foreach (i=1:dim(ply)[1],.errorhandling = "pass",  .export=c('gDifference'), .packages=c('raster',"rgdal","rgeos")) %dopar% {
@@ -175,7 +177,7 @@ threat_host <- function(ply,width,all_infested_poly,host, buffer,n_cores){
 }
 #ply=threat_host(ply,width,all_infested_poly=ply,host, buffer ,n_cores=10)
 # need to run the above code as input for ply, the two functions were seperated to improve efficiency
-hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cores){
+hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
   
   area=budget/cost_per_meter_sq
   n=floor(area/pixelArea)+1
@@ -223,10 +225,11 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cor
       
     } else {
       
-      ra_ply=threat_host(div_ply,width,all_infested_poly=ply,host, n_cores)
+      ra_ply=threat_host(div_ply,width,all_infested_poly=ply,host,buffer)
       ra_ply2=ra_ply[order(ra_ply$threat_host_number,decreasing = T),]
       
       div_bf=buffer(ra_ply2,width=buffer,dissolve=F)
+      
       
       n2=length(div_bf)
       div_bf$Cumu_Area=0
@@ -254,6 +257,7 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cor
         df2=area-area(treatment)
         if (df2<=0){break}
       }
+      
     }
   }
   
@@ -263,8 +267,7 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cor
   return(treatmentLs)
   
 }
-
-hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cores){
+hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
   
   area=budget/cost_per_meter_sq
   n=floor(area/pixelArea)+1
@@ -312,7 +315,7 @@ hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cor
       
     } else {
       
-      ra_ply=threat_host(div_ply,width,all_infested_poly=ply,host, n_cores)
+      ra_ply=threat_host(div_ply,width,all_infested_poly=ply,host,buffer)
       ra_ply2=ra_ply[order(ra_ply$BCratio,decreasing = T),]
       
       div_bf=buffer(ra_ply2,width=buffer,dissolve=F)
@@ -356,8 +359,7 @@ hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cor
 }
 
 
-
-################################################ Method 3 -- Select highest infested patches/polys #################################
+#################################### Method 3 -- Select highest infested patches/polys #################################
 Hinfest_pch = function(inf,ply, buffer,budget,cost_per_meter_sq){
   
   pixelArea= xres(inf)*yres(inf)
@@ -469,6 +471,7 @@ wvfrt = function(inf){
   lns=as(sps,"SpatialLinesDataFrame")
   return(lns)
 }
+
 wvfrt_pch = function(inf,ply, buffer,budget, cost_per_meter_sq){
   
   pixelArea=xres(inf)*yres(inf)
@@ -560,7 +563,7 @@ wvfrtHzd_pch = function(inf,ply, all_infested_poly=ply,width=1000, distance_clas
   
   ply$dis_frtwv=distance[1:length(ply)]
   ply2=ply[order(ply$dis_frtwv,decreasing = F),]
-  ply2=threat_host(ply2,width,all_infested_poly=ply, host,  buffer,n_cores=10)
+  ply2=threat_host(ply2,width,all_infested_poly=ply, host,  buffer)
   
   # based on the distance to wave front, classify all infested pixels/polygons into 
   # 6 classes using kmeans
@@ -620,7 +623,7 @@ wvfrtHzd_pch = function(inf,ply, all_infested_poly=ply,width=1000, distance_clas
       treatment=gUnion(treatment,crds_bf)
     } else {
       
-      div_ply=threat_host(div_ply,width,all_infested_poly=ply,host,buffer, n_cores=8)
+      div_ply=threat_host(div_ply,width,all_infested_poly=ply,host,buffer)
       div_ply2=div_ply[order(div_ply$threat_host_number,decreasing = T),]
       
       div_bf=buffer(div_ply2,width=buffer,dissolve=F)
@@ -719,8 +722,8 @@ threat_host2 <- function(ply,all_infested_poly,inf,Wcoef, dispersal_rate,reprodu
   
   host_number=foreach (i=1:dim(ply)[1],.errorhandling = "pass",  .export=c('gDifference'), .packages=c('raster',"rgdal","rgeos")) %dopar% {
     #gDifference(plybuf[i,],ply[i,])
-    buff_only=gBuffer(plybuf[i,],width=0)
-    buff_only=gDifference(plybuf[i,], ply2)
+    buff_only=gBuffer(plybuf[i,],byid=T,width=0)
+    buff_only=gDifference(buff_only, ply2)
     
     va=try(extract(host,buff_only,na.rm=T,fun=sum))
     if (class(va)=="try-error"){va=0}
@@ -732,7 +735,7 @@ threat_host2 <- function(ply,all_infested_poly,inf,Wcoef, dispersal_rate,reprodu
   stopCluster(cl)
   
   ply$threat_host_number=as.data.frame(unlist(host_number))[,1]
-  ply_bf2=buffer(ply,width=buffer,dissolve=F)
+  ply_bf2=gBuffer(ply,byid=T,width=buffer)
   ply$area=area(ply_bf2)
   ply$BCratio=ply$threat_host_number/ply$area
   
@@ -753,7 +756,7 @@ threat_host2 <- function(ply,all_infested_poly,inf,Wcoef, dispersal_rate,reprodu
 #ply_ratio=rgbf[[1]]
 #ply_nhost=rgbf[[2]]
 # use ply_ratio or ply_nhost as the input for ply
-hzd2Rt_pch <- function(ply=ply_ratio,all_infested_poly,inf,budget,cost_per_meter_sq,buffer,Wcoef=Tcoef,dispersal_rate,reproductive_rate,Nstep){
+hzd2Rt_pch <- function(ply,all_infested_poly,inf,budget,cost_per_meter_sq,buffer,Wcoef=Tcoef,dispersal_rate,reproductive_rate,Nstep){
   
   area=budget/cost_per_meter_sq
   n=floor(area/pixelArea)+1
@@ -823,7 +826,7 @@ hzd2Rt_pch <- function(ply=ply_ratio,all_infested_poly,inf,budget,cost_per_meter
   
   return(treatmentLs)
 }
-hzd2Nu_pch <- function(ply=ply_nhost,all_infested_poly,inf,budget,cost_per_meter_sq,buffer,Wcoef=Tcoef,dispersal_rate,reproductive_rate,Nstep){
+hzd2Nu_pch <- function(ply,all_infested_poly,inf,budget,cost_per_meter_sq,buffer,Wcoef=Tcoef,dispersal_rate,reproductive_rate,Nstep){
   
   area=budget/cost_per_meter_sq
   n=floor(area/pixelArea)+1
@@ -893,4 +896,3 @@ hzd2Nu_pch <- function(ply=ply_nhost,all_infested_poly,inf,budget,cost_per_meter
   
   return(treatmentLs)
 }
-
