@@ -59,6 +59,7 @@ ra2plyMerge <- function(x, outshape=NULL, gdalformat = 'ESRI Shapefile',pypath="
 }
 
 
+
 ########################################### Method 1 -- Random selection of infested patches/polys ###############################
 random_pch <- function(inf,ply,budget, cost_per_meter_sq, buffer){
   
@@ -69,8 +70,6 @@ random_pch <- function(inf,ply,budget, cost_per_meter_sq, buffer){
   ## Random selection
   set.seed(random_seed)
   ply2=ply[sample(1:length(ply),length(ply)),]
-  
-  
   
   ply_bf=buffer(ply2, width=buffer,dissolve=F)
   ply_bf$area=area(ply_bf)
@@ -136,6 +135,8 @@ random_pch <- function(inf,ply,budget, cost_per_meter_sq, buffer){
   
   return(treatmentLs)
 }
+
+
 
 ###################################### Method 2 -- Select infested patches/polys based on number of uninfested host within ##############
 ## a given width of constant buffer 
@@ -227,7 +228,6 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cor
       
       div_bf=buffer(ra_ply2,width=buffer,dissolve=F)
       
-      
       n2=length(div_bf)
       div_bf$Cumu_Area=0
       
@@ -254,7 +254,6 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cor
         df2=area-area(treatment)
         if (df2<=0){break}
       }
-      
     }
   }
   
@@ -264,6 +263,7 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cor
   return(treatmentLs)
   
 }
+
 hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cores){
   
   area=budget/cost_per_meter_sq
@@ -355,6 +355,8 @@ hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,n_cor
   
 }
 
+
+
 ################################################ Method 3 -- Select highest infested patches/polys #################################
 Hinfest_pch = function(inf,ply, buffer,budget,cost_per_meter_sq){
   
@@ -443,6 +445,8 @@ Hinfest_pch = function(inf,ply, buffer,budget,cost_per_meter_sq){
   return(treatmentLs)
   
 }
+
+
 
 #################################################### Method 4 -- Select infested patches/polys at wave front #############################
 # get wavefront
@@ -540,6 +544,9 @@ wvfrt_pch = function(inf,ply, buffer,budget, cost_per_meter_sq){
   return(treatmentLs)
   
 }
+
+
+
 #################################################### Method 5 -- wavefront method weighted by hazard ########################
 wvfrtHzd_pch = function(inf,ply, all_infested_poly=ply,width=1000, distance_classes=6, host,buffer,budget,  cost_per_meter_sq){
   
@@ -649,6 +656,9 @@ wvfrtHzd_pch = function(inf,ply, all_infested_poly=ply,width=1000, distance_clas
   return(treatmentLs)
   
 }
+
+
+
 ############################################## Method 6 -- based on number of uninfested host within different  #####################
 ## size of buffer for each patch/polygons, the buffer size is determined based on 
 ## dispersal kernel and clamatic factors. 2 methods area associated with this approach 
