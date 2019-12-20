@@ -753,7 +753,7 @@ threat_host2 <- function(ply,all_infested_poly,inf,Wcoef, dispersal_rate,reprodu
 #ply_ratio=rgbf[[1]]
 #ply_nhost=rgbf[[2]]
 # use ply_ratio or ply_nhost as the input for ply
-hzd2Rt_pch <- function(ply_ratio,all_infested_poly,inf,budget,cost_per_meter_sq,buffer,Wcoef=Tcoef,dispersal_rate,reproductive_rate,Nstep){
+hzd2Rt_pch <- function(ply=ply_ratio,all_infested_poly,inf,budget,cost_per_meter_sq,buffer,Wcoef=Tcoef,dispersal_rate,reproductive_rate,Nstep){
   
   area=budget/cost_per_meter_sq
   n=floor(area/pixelArea)+1
@@ -823,7 +823,7 @@ hzd2Rt_pch <- function(ply_ratio,all_infested_poly,inf,budget,cost_per_meter_sq,
   
   return(treatmentLs)
 }
-hzd2Nu_pch <- function(ply_nhost,all_infested_poly,inf,budget,cost_per_meter_sq,buffer,Wcoef=Tcoef,dispersal_rate,reproductive_rate,Nstep){
+hzd2Nu_pch <- function(ply=ply_nhost,all_infested_poly,inf,budget,cost_per_meter_sq,buffer,Wcoef=Tcoef,dispersal_rate,reproductive_rate,Nstep){
   
   area=budget/cost_per_meter_sq
   n=floor(area/pixelArea)+1
