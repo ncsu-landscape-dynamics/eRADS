@@ -141,7 +141,9 @@ random_pch <- function(inf,ply,budget, cost_per_meter_sq, buffer){
 ###################################### Method 2 -- Select infested patches/polys based on number of uninfested host within ##############
 ## a given width of constant buffer 
 #### Method 2 -- Select infested patches/polys based on number of uninfested host within ####
-## a given width of constant buffer 
+## a given width of constant buffer.  2 methods are associated with this approach: one is based on the number of nearby uninfested host, 
+                                          ## and one is based on the (number of nearby uninfested host)/(area of infested patch) 
+
 threat_host <- function(ply,width,all_infested_poly,host, buffer){
   
   plybuf=buffer(ply,width=width,dissolve=F)
@@ -177,6 +179,8 @@ threat_host <- function(ply,width,all_infested_poly,host, buffer){
 }
 #ply=threat_host(ply,width,all_infested_poly=ply,host, buffer ,n_cores=10)
 # need to run the above code as input for ply, the two functions were seperated to improve efficiency
+
+# based on number of uninfested host within 1000m
 hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
   
   area=budget/cost_per_meter_sq
@@ -267,6 +271,8 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
   return(treatmentLs)
   
 }
+
+## based on (number of uninfested host within 1000m)/(area of infested patch)
 hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
   
   area=budget/cost_per_meter_sq
@@ -664,7 +670,8 @@ wvfrtHzd_pch = function(inf,ply, all_infested_poly=ply,width=1000, distance_clas
 
 ############################################## Method 6 -- based on number of uninfested host within different  #####################
 ## size of buffer for each patch/polygons, the buffer size is determined based on 
-## dispersal kernel and clamatic factors. 2 methods area associated with this approach 
+## dispersal kernel and clamatic factors. 2 methods are associated with this approach: one is based on the number of nearby uninfested host, 
+                                          ## and one is based on the (number of nearby uninfested host)/(area of infested patch) 
 
 ## Calculate buffer size around each patch/polygon
 buffSize <- function(ply,inf,Wcoef, dispersal_rate,reproductive_rate,Nstep){
