@@ -883,7 +883,3 @@ hzd2Nu_pch <- function(ply_nhost,all_infested_poly,inf,budget,cost_per_meter_sq,
   return(treatmentLs)
 }
 
-
-
-
-
