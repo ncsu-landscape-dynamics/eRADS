@@ -109,7 +109,7 @@ random_pch <- function(inf,ply,budget, cost_per_meter_sq, buffer){
       
       div_bf$Cumu_Area=0
       
-      for (i in 1:n2){
+      for (i in 1:length(div_bf)){
         trt2=gUnionCascaded(div_bf[1:i,])
         div_bf$Cumu_Area[i]=area(trt2)
       }
