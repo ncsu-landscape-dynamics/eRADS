@@ -7,7 +7,7 @@ ra2plyMerge <- function(x, outshape=NULL, gdalformat = 'ESRI Shapefile',pypath="
   require(raster)
   require(rgdal)
   
-  x=reclassify(x,c(1,Inf,1))
+  x=reclassify(x,c(0,Inf,1))
   
   
   dir=getwd()
