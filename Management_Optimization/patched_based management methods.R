@@ -91,7 +91,7 @@ random_pch <- function(inf,ply,budget, cost_per_meter_sq, buffer){
   
   n2=floor(df/pixelArea)+1
   
-  if (df>0){
+  if (df>=9){
     
     ply_div= nontr[1,]
     
@@ -122,7 +122,7 @@ random_pch <- function(inf,ply,budget, cost_per_meter_sq, buffer){
       df2=area-area(treatment)
       nontr2=div_bf[div_bf$Cumu_Area> df,]
       
-      if (df2>0){
+      if (df2>=9){
         crds=gCentroid(nontr2[1,])
         crds_bf=buffer(crds,width=sqrt(df2/pi))
         treatment=gUnion(treatment,crds_bf)
@@ -142,7 +142,7 @@ random_pch <- function(inf,ply,budget, cost_per_meter_sq, buffer){
 ## a given width of constant buffer 
 #### Method 2 -- Select infested patches/polys based on number of uninfested host within ####
 ## a given width of constant buffer.  2 methods are associated with this approach: one is based on the number of nearby uninfested host, 
-                                          ## and one is based on the (number of nearby uninfested host)/(area of infested patch) 
+## and one is based on the (number of nearby uninfested host)/(area of infested patch) 
 
 threat_host <- function(ply,width,all_infested_poly,host, buffer){
   
@@ -181,9 +181,10 @@ threat_host <- function(ply,width,all_infested_poly,host, buffer){
 # need to run the above code as input for ply, the two functions were seperated to improve efficiency
 
 # based on number of uninfested host within 1000m
-hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
+hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,width){
   
   area=budget/cost_per_meter_sq
+  pixelArea=xres(inf)*yres(inf)
   n=floor(area/pixelArea)+1
   
   ply2 = ply[order(ply$threat_host_number,decreasing = T),]
@@ -206,7 +207,7 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
   df=area-area(treatment)
   nontr=ply2[ply_bf$Cumu_Area> area,]
   
-  if (df>0){
+  if (df>9){
     
     ply_div= nontr[1,]
     div_ra= rasterize(ply_div,inf,background=NA,field=1)
@@ -229,7 +230,7 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
       
     } else {
       
-      ra_ply=threat_host(div_ply,width,all_infested_poly=ply,host,buffer)
+      ra_ply=threat_host(div_ply,width=width,all_infested_poly=ply,host,buffer)
       ra_ply2=ra_ply[order(ra_ply$threat_host_number,decreasing = T),]
       
       div_bf=buffer(ra_ply2,width=buffer,dissolve=F)
@@ -273,9 +274,10 @@ hzd1Nu_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
 }
 
 ## based on (number of uninfested host within 1000m)/(area of infested patch)
-hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
+hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer,width){
   
   area=budget/cost_per_meter_sq
+  pixelArea=xres(inf)*yres(inf)
   n=floor(area/pixelArea)+1
   
   ply2 = ply[order(ply$BCratio,decreasing = T),]
@@ -298,7 +300,7 @@ hzd1Rt_pch <- function(inf,ply=ply,host, budget, cost_per_meter_sq, buffer){
   df=area-area(treatment)
   nontr=ply2[ply_bf$Cumu_Area> area,]
   
-  if (df>0){
+  if (df>=9){
     
     ply_div= nontr[1,]
     div_ra= rasterize(ply_div,inf,background=NA,field=1)
@@ -405,7 +407,7 @@ Hinfest_pch = function(inf,ply, buffer,budget,cost_per_meter_sq){
   df=area-area(treatment)
   nontr=ply2[ply_bf$Cumu_Area> area,]
   
-  if (df>0){
+  if (df>=9){
     
     ply_div= nontr[1,]
     div_ra= rasterize(ply_div,inf,background=NA,field=1)
@@ -439,7 +441,7 @@ Hinfest_pch = function(inf,ply, buffer,budget,cost_per_meter_sq){
       df2=area-area(treatment)
       nontr2=div_bf[div_bf$Cumu_Area> df,]
       
-      if (df2>0){
+      if (df2>=9){
         crds=gCentroid(nontr2[1,])
         crds_bf=buffer(crds,width=sqrt(df2/pi))
         treatment=gUnion(treatment,crds_bf)
@@ -505,7 +507,7 @@ wvfrt_pch = function(inf,ply, buffer,budget, cost_per_meter_sq){
   df=area-area(treatment)
   nontr=ply2[ply_bf$Cumu_Area> area,]
   
-  if (df>0){
+  if (df>=9){
     
     ply_div= nontr[1,]
     div_ra= rasterize(ply_div,inf,background=NA,field=1)
@@ -539,7 +541,7 @@ wvfrt_pch = function(inf,ply, buffer,budget, cost_per_meter_sq){
       df2=area-area(treatment)
       nontr2=div_bf[div_bf$Cumu_Area> df,]
       
-      if (df2>0){
+      if (df2>=9){
         crds=gCentroid(nontr2[1,])
         crds_bf=buffer(crds,width=sqrt(df2/pi))
         treatment=gUnion(treatment,crds_bf)
@@ -617,7 +619,7 @@ wvfrtHzd_pch = function(inf,ply, all_infested_poly=ply,width=1000, distance_clas
   df=area-area(treatment)
   nontr=ply_groups[ply_groups$Cumu_Area>area,]
   
-  if (df>0){
+  if (df>=9){
     
     div_ply= buffer(nontr[1,],width=-buffer,dissolve=F)
     div_ra=rasterize(div_ply,inf,field=1,background=NA)
@@ -651,7 +653,7 @@ wvfrtHzd_pch = function(inf,ply, all_infested_poly=ply,width=1000, distance_clas
       df2=area-area(treatment)
       nontr2=div_bf[div_bf$Cumu_Area> df,]
       
-      if (df2>0){
+      if (df2>=9){
         crds=gCentroid(nontr2[1,])
         crds_bf=buffer(crds,width=sqrt(df2/pi))
         treatment=gUnion(treatment,crds_bf)
@@ -671,7 +673,7 @@ wvfrtHzd_pch = function(inf,ply, all_infested_poly=ply,width=1000, distance_clas
 ############################################## Method 6 -- based on number of uninfested host within different  #####################
 ## size of buffer for each patch/polygons, the buffer size is determined based on 
 ## dispersal kernel and clamatic factors. 2 methods are associated with this approach: one is based on the number of nearby uninfested host, 
-                                          ## and one is based on the (number of nearby uninfested host)/(area of infested patch) 
+## and one is based on the (number of nearby uninfested host)/(area of infested patch) 
 
 ## Calculate buffer size around each patch/polygon
 buffSize <- function(ply,inf,Wcoef, dispersal_rate,reproductive_rate,Nstep){
@@ -786,7 +788,7 @@ hzd2Rt_pch <- function(ply,all_infested_poly,inf,budget,cost_per_meter_sq,buffer
   df=area-area(treatment)
   nontr=ply[ply_bf$Cumu_Area> area,]
   
-  if (df>0){
+  if (df>=9){
     
     ply_div= nontr[1,]
     div_ra= rasterize(ply_div,inf,background=NA,field=1)
@@ -819,7 +821,7 @@ hzd2Rt_pch <- function(ply,all_infested_poly,inf,budget,cost_per_meter_sq,buffer
       df2=area-area(treatment)
       nontr2=div_bf[div_bf$Cumu_Area> df,]
       
-      if (df2>0){
+      if (df2>=9){
         crds=gCentroid(nontr2[1,])
         crds_bf=buffer(crds,width=sqrt(df2/pi))
         treatment=gUnion(treatment,crds_bf)
@@ -856,7 +858,7 @@ hzd2Nu_pch <- function(ply,all_infested_poly,inf,budget,cost_per_meter_sq,buffer
   df=area-area(treatment)
   nontr=ply[ply_bf$Cumu_Area> area,]
   
-  if (df>0){
+  if (df>=9){
     
     ply_div= nontr[1,]
     div_ra= rasterize(ply_div,inf,background=NA,field=1)
@@ -889,7 +891,7 @@ hzd2Nu_pch <- function(ply,all_infested_poly,inf,budget,cost_per_meter_sq,buffer
       df2=area-area(treatment)
       nontr2=div_bf[div_bf$Cumu_Area> df,]
       
-      if (df2>0){
+      if (df2>=9){
         crds=gCentroid(nontr2[1,])
         crds_bf=buffer(crds,width=sqrt(df2/pi))
         treatment=gUnion(treatment,crds_bf)
