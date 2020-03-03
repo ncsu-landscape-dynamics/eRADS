@@ -301,3 +301,34 @@ SAparFun= function(k){
 }
 
 
+## Run SA in parallel ##
+library(foreach)
+library(parallel)
+library(doParallel)
+
+t1=proc.time()
+cl=makeCluster(30)
+registerDoParallel(cl)
+
+result=foreach(k=1:30,.combine = rbind,.errorhandling = "pass",.export = c("SAparFun","wt50","wt20","ply20","best","ply50","SAfit","hzd3","inf","use_lethal_temperature","lethal_temperature","lethal_temperature_month",
+                                                   "infected_speci","susceptible_speci","total_pl","mortality_on","weather","temperature","wc",
+                                                   "ew_res","ns_res","num_rows","num_cols","time_step","reproductive_rate","mortality_rate","mortality_time_lag",
+                                                   "season_month_start", "season_month_end","start_time","end_time","natural_kernel_type","anthropogenic_kernel_type",
+                                                   "use_anthropogenic_kernel", "percent_natural_dispersal","natural_distance_scale", "anthropogenic_distance_scale",
+                                                   "natural_dir", "natural_kappa","anthropogenic_dir", "anthropogenic_kappa"),.packages = c("rgdal","raster","PoPS","rgeos"))%dopar%
+  
+  {
+    ftva=SAparFun(k)
+    #if (ftva[[1]]<1490){
+    # re=ftva[[2]]
+    #return(re)
+    #} else {return(hzd3[526,])}
+    #return(ftva[[1]])
+    return(ftva)
+  }
+
+stopCluster(cl)
+proc.time()-t1
+
+dim(result)
+summary(result)
