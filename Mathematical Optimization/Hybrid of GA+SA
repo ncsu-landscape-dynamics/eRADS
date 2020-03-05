@@ -1,4 +1,3 @@
-## coming soon  
 GAfitPara= function(pop,inf,n=dim(pop)[1]){
   ft=data.frame(matrix(0,nrow=n,ncol=1))
   colnames(ft)="Fitness"
@@ -60,8 +59,8 @@ SAparFun= function(k){
   f1=SAfit(initial_selections,inf)
   best=initial_selections
   
-  ply50$ID=1:length(ply50)
-  ply20$ID=(1+length(ply50)):(length(ply50)+length(ply20))
+  ply50$ID2=1:length(ply50)
+  ply20$ID2=(1+length(ply50)):(length(ply50)+length(ply20))
   ply20$remove=0
   ply50$remove=0
   
@@ -135,7 +134,7 @@ SAparFun= function(k){
         
       }
       Ns=Ns+1
-      #print(f1)
+      print(f1)
     }
     
   }
@@ -195,17 +194,23 @@ library(doParallel)
 
 pop=inipop(nvar=150,sele=109,psize=500)
 
-for (i in 1:10){
+for (i in 1:100){
+  for (c in 1:dim(pop)[1]){
+    elem=pop[c,]
+    pop[c,1:sele]=as.vector(unlist(elem[order(elem)]))
+  }
+  
   ftPop=GAfitPara(pop,inf,n=dim(pop)[1])
   best_pop=pop[which.min(ftPop$Fitness),1:sele]
+  pop=pop[order(ftPop$Fitness),]
   best_pop=as.vector(unlist(best_pop[order(best_pop)]))
   ft=min(ftPop$Fitness)
   print(ft)
   
   
-  cl=makeCluster(40)
+  cl=makeCluster(50)
   registerDoParallel(cl)
-  SAresult=foreach(k=1:40,.combine = rbind,.errorhandling = "pass",.export = c("ft","best_pop","SAparFun","ply20","best","ply50","SAfit","hzd3","inf","use_lethal_temperature","lethal_temperature","lethal_temperature_month",
+  SAresult=foreach(k=1:50,.combine = rbind,.errorhandling = "pass",.export = c("ft","best_pop","SAparFun","ply20","best","ply50","SAfit","hzd3","inf","use_lethal_temperature","lethal_temperature","lethal_temperature_month",
                                                                                "infected_speci","susceptible_speci","total_pl","mortality_on","weather","temperature","wc",
                                                                                "ew_res","ns_res","num_rows","num_cols","time_step","reproductive_rate","mortality_rate","mortality_time_lag",
                                                                                "season_month_start", "season_month_end","start_time","end_time","natural_kernel_type","anthropogenic_kernel_type",
@@ -223,7 +228,9 @@ for (i in 1:10){
   
   SAresult=as.data.frame(SAresult)
   n_SA=dim(SAresult)[1]
-  SAresult[n_SA+1,1:sele]=best_pop
-  
+  if (n_SA!=0){
+    colnames(SAresult)=colnames(pop)
+  }
+  SAresult=rbind(SAresult,pop[1:20,])
   pop=crossOverMute(150,SAresult,500,109)
 }
