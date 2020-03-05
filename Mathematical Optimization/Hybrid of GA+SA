@@ -1,1 +1,229 @@
-## coming soon  :)
+## coming soon  
+GAfitPara= function(pop,inf,n=dim(pop)[1]){
+  ft=data.frame(matrix(0,nrow=n,ncol=1))
+  colnames(ft)="Fitness"
+  
+  cl=makeCluster(30)
+  registerDoParallel(cl)
+  
+  result=foreach(k=1:n,.combine = rbind,.export = c("GAfit","pop","hzd3","inf","use_lethal_temperature","lethal_temperature","lethal_temperature_month",
+                                                    "infected_speci","susceptible_speci","total_pl","mortality_on","weather","temperature","wc",
+                                                    "ew_res","ns_res","num_rows","num_cols","time_step","reproductive_rate","mortality_rate","mortality_time_lag",
+                                                    "season_month_start", "season_month_end","start_time","end_time","natural_kernel_type","anthropogenic_kernel_type",
+                                                    "use_anthropogenic_kernel", "percent_natural_dispersal","natural_distance_scale", "anthropogenic_distance_scale",
+                                                    "natural_dir", "natural_kappa","anthropogenic_dir", "anthropogenic_kappa"),.packages = c("rgdal","raster","PoPS","rgeos"))%dopar%
+    
+    {
+      vars=unlist(as.list(pop[k,]))
+      return(GAfit(vars,inf))
+      
+    }
+  
+  stopCluster(cl)
+  
+  ft=data.frame(result)
+  colnames(ft)="Fitness"
+  
+  return(ft)
+  
+}
+SAparFun= function(k){
+  
+  #wt20=c(rep(4,15),rep(2,10),rep(0.5,16))
+  #wt50=c(rep(0.01,80),rep(1,15),rep(2,14))
+  ply50=hzd3[best_pop,]
+  ply20=hzd3[-best_pop,]
+  initial_selections=ply50
+  more_selections=ply20
+  nLocation=length(ply50)
+  newLocation=length(ply20)
+  
+  nl1=round(nLocation*0.60)
+  nl2=round(nLocation*0.80)-round(nLocation*0.60)
+  nl3=nLocation-nl1-nl2
+  
+  ne1=round(newLocation*0.60)
+  ne2=round(newLocation*0.80)-round(newLocation*0.60)
+  ne3=newLocation-ne1-ne2
+  
+  p=c(1,4,9)
+  wt20=c(rep(p[3],ne3),rep(p[2],ne2),rep(p[1],ne1))
+  wt50=c(rep(p[1],nl1),rep(p[2],nl2),rep(p[3],nl3))
+  
+  #wt20=c(rep(4,15),rep(2,10),rep(0.5,16))
+  #wt50=c(rep(0.01,80),rep(1,15),rep(2,14))
+  
+  tl=seq(2,0,by=-0.5)
+  nl=length(tl)
+  number_iteration= 100
+  
+  f1=SAfit(initial_selections,inf)
+  best=initial_selections
+  
+  ply50$ID=1:length(ply50)
+  ply20$ID=(1+length(ply50)):(length(ply50)+length(ply20))
+  ply20$remove=0
+  ply50$remove=0
+  
+  df=data.frame(matrix(0,ncol=1,nrow=length(tl)*number_iteration))
+  Ns=1
+  nbest=Ns
+  
+  for (r in 1:length(tl)){
+    
+    t=tl[r]
+    
+    for (i in 1:number_iteration){
+      
+      if (length(ply20)==0){break}
+      
+      id50=sample(1:length(wt50),1,prob=wt50)
+      s50=ply50[id50,]
+      
+      id20=sample(1:length(ply20),1,prob=wt20)
+      s20=ply20[id20,]
+      
+      
+      trt=rbind(ply50[-id50,],s20)
+      
+      
+      f2=SAfit(trt,inf)
+      dif=f2-f1
+      
+      if (dif>60){
+        
+        #ply20=ply20[-id20,]
+        #wt20=wt20[-id20]
+        ply20$remove[id20]=ply20$remove[id20]+1
+        #wt20[id20]=wt20[id20]/2
+        
+        wt20=wt20[ply20$remove<10]
+        ply20=ply20[ply20$remove<10,]
+      }
+      
+      if (f2<=f1){
+        
+        ply50=rbind(ply50[-id50,],s20)
+        ply20=rbind(s50,ply20[-id20,])
+        
+        f1=f2
+        best=ply50
+        nbest=Ns
+      }
+      if (dif<=60 & dif>0) {
+        
+        prop=exp(1)^(-dif/t)
+        
+        if (prop<1){
+          n=floor(prop*100)
+          
+          if (n>0){
+            n2=100-n
+            chid=sample(1:2,1,prob = c(n,n2))
+            
+            if (chid==1){
+              ply50=rbind(ply50[-id50,],s20)
+              ply20=rbind(s50,ply20[-id20,])
+              #contr=res
+              f1=f2
+            }
+          }
+          
+          
+        }
+        
+        
+      }
+      Ns=Ns+1
+      #print(f1)
+    }
+    
+  }
+  
+  ids=best$ID
+  bestft=SAfit(best,inf)
+  re=list(bestft,ids)
+  return(re)
+  #return(best)
+}
+crossOverMute=function(N=150,inputVars=SAresult,psize=500,sele=109){
+  
+  cross_number=psize-dim(inputVars)[1]
+  
+  varNew=data.frame(matrix(0,ncol=sele))
+  
+  
+  for (k in 1:cross_number){
+    ids=sample(1:dim(inputVars)[1],2)
+    var2=inputVars[ids,]
+    
+    ids=c(var2[1,],var2[2,])
+    ids2=unlist(unique(ids))
+    l=length(ids2)
+    ids2=ids2[order(ids2,decreasing = F)]
+    nvar=ids2[sample(1:l,sele)]
+    
+    
+    varNew[k,1:sele]=nvar[1:sele]
+    
+    # mutation
+    mu=sample(c(1,2),1,prob=c(8,2))
+    
+    if (mu==2){
+      df=setdiff(c(1:N),nvar)
+      df=df[order(df,decreasing = F)]
+      
+      muN=sample(df,1,prob=c(length(df):1))
+      
+      nvar2=nvar[order(nvar,decreasing = F)]
+      muVar=sample(1:length(nvar2),1,prob=c(1:length(nvar2)))
+      
+      nvar2[muVar]=muN
+      varNew[k,1:sele]=nvar2[1:sele]
+    }
+    
+  }
+  colnames(inputVars)=colnames(varNew)
+  newVar=rbind(inputVars,varNew)
+  
+  return(newVar)
+}
+
+library(foreach)
+library(parallel)
+library(doParallel)
+
+pop=inipop(nvar=150,sele=109,psize=500)
+
+for (i in 1:10){
+  ftPop=GAfitPara(pop,inf,n=dim(pop)[1])
+  best_pop=pop[which.min(ftPop$Fitness),1:sele]
+  best_pop=as.vector(unlist(best_pop[order(best_pop)]))
+  ft=min(ftPop$Fitness)
+  print(ft)
+  
+  
+  cl=makeCluster(40)
+  registerDoParallel(cl)
+  SAresult=foreach(k=1:40,.combine = rbind,.errorhandling = "pass",.export = c("ft","best_pop","SAparFun","ply20","best","ply50","SAfit","hzd3","inf","use_lethal_temperature","lethal_temperature","lethal_temperature_month",
+                                                                               "infected_speci","susceptible_speci","total_pl","mortality_on","weather","temperature","wc",
+                                                                               "ew_res","ns_res","num_rows","num_cols","time_step","reproductive_rate","mortality_rate","mortality_time_lag",
+                                                                               "season_month_start", "season_month_end","start_time","end_time","natural_kernel_type","anthropogenic_kernel_type",
+                                                                               "use_anthropogenic_kernel", "percent_natural_dispersal","natural_distance_scale", "anthropogenic_distance_scale",
+                                                                               "natural_dir", "natural_kappa","anthropogenic_dir", "anthropogenic_kappa"),.packages = c("rgdal","raster","PoPS","rgeos"))%dopar%
+    
+    {
+      ftva=SAparFun(k)
+      if (ftva[[1]]<ft){
+        return(ftva[[2]])
+      }
+    }
+  
+  stopCluster(cl)
+  
+  SAresult=as.data.frame(SAresult)
+  n_SA=dim(SAresult)[1]
+  SAresult[n_SA+1,1:sele]=best_pop
+  
+  pop=crossOverMute(150,SAresult,500,109)
+}
