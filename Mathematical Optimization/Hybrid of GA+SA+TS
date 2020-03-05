@@ -37,30 +37,26 @@ SAparFun= function(k){
   nLocation=length(ply50)
   newLocation=length(ply20)
   
-  nl1=round(nLocation*0.60)
-  nl2=round(nLocation*0.80)-round(nLocation*0.60)
+  nl1=round(nLocation*0.75)
+  nl2=round(nLocation*0.95)-round(nLocation*0.75)
   nl3=nLocation-nl1-nl2
   
-  ne1=round(newLocation*0.60)
-  ne2=round(newLocation*0.80)-round(newLocation*0.60)
+  ne1=round(newLocation*0.75)
+  ne2=round(newLocation*0.95)-round(newLocation*0.75)
   ne3=newLocation-ne1-ne2
   
-  p=c(1,4,9)
+  p=c(1,3,9)
   wt20=c(rep(p[3],ne3),rep(p[2],ne2),rep(p[1],ne1))
   wt50=c(rep(p[1],nl1),rep(p[2],nl2),rep(p[3],nl3))
   
-  #wt20=c(rep(4,15),rep(2,10),rep(0.5,16))
-  #wt50=c(rep(0.01,80),rep(1,15),rep(2,14))
-  
   tl=seq(2,0,by=-0.5)
   nl=length(tl)
-  number_iteration= 100
+  number_iteration= 200
   
   f1=SAfit(initial_selections,inf)
   best=initial_selections
   
-  ply50$ID2=1:length(ply50)
-  ply20$ID2=(1+length(ply50)):(length(ply50)+length(ply20))
+ 
   ply20$remove=0
   ply50$remove=0
   
@@ -89,12 +85,9 @@ SAparFun= function(k){
       f2=SAfit(trt,inf)
       dif=f2-f1
       
-      if (dif>60){
+      if (dif>80){
         
-        #ply20=ply20[-id20,]
-        #wt20=wt20[-id20]
         ply20$remove[id20]=ply20$remove[id20]+1
-        #wt20[id20]=wt20[id20]/2
         
         wt20=wt20[ply20$remove<10]
         ply20=ply20[ply20$remove<10,]
@@ -109,7 +102,7 @@ SAparFun= function(k){
         best=ply50
         nbest=Ns
       }
-      if (dif<=60 & dif>0) {
+      if (dif<=80 & dif>0) {
         
         prop=exp(1)^(-dif/t)
         
@@ -192,9 +185,9 @@ library(foreach)
 library(parallel)
 library(doParallel)
 
-pop=inipop(nvar=150,sele=109,psize=500)
 
 for (i in 1:100){
+  
   for (c in 1:dim(pop)[1]){
     elem=pop[c,]
     pop[c,1:sele]=as.vector(unlist(elem[order(elem)]))
@@ -210,7 +203,7 @@ for (i in 1:100){
   
   cl=makeCluster(50)
   registerDoParallel(cl)
-  SAresult=foreach(k=1:50,.combine = rbind,.errorhandling = "pass",.export = c("ft","best_pop","SAparFun","ply20","best","ply50","SAfit","hzd3","inf","use_lethal_temperature","lethal_temperature","lethal_temperature_month",
+  SAresult=foreach(k=1:50,.combine = rbind,.errorhandling = "pass",.export = c("ft","best_pop","SAparFun","ply20","ply50","SAfit","hzd3","inf","use_lethal_temperature","lethal_temperature","lethal_temperature_month",
                                                                                "infected_speci","susceptible_speci","total_pl","mortality_on","weather","temperature","wc",
                                                                                "ew_res","ns_res","num_rows","num_cols","time_step","reproductive_rate","mortality_rate","mortality_time_lag",
                                                                                "season_month_start", "season_month_end","start_time","end_time","natural_kernel_type","anthropogenic_kernel_type",
@@ -219,18 +212,25 @@ for (i in 1:100){
     
     {
       ftva=SAparFun(k)
+      #return(ftva[[1]])
       if (ftva[[1]]<ft){
         return(ftva[[2]])
-      }
+       }
     }
   
   stopCluster(cl)
   
   SAresult=as.data.frame(SAresult)
   n_SA=dim(SAresult)[1]
+  
   if (n_SA!=0){
     colnames(SAresult)=colnames(pop)
   }
-  SAresult=rbind(SAresult,pop[1:20,])
-  pop=crossOverMute(150,SAresult,500,109)
+  
+  newpop=inipop(nvar=150,sele=109,psize=300)
+  SAresult=rbind(SAresult,pop[1:10,])
+  n_crossmute=700
+  pop=crossOverMute(150,SAresult,n_crossmute,109)
+  colnames(newpop)=colnames(pop)
+  pop=rbind(newpop,pop)
 }
