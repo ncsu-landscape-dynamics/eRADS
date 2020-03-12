@@ -1,0 +1,141 @@
+
+setwd("Q:/Shared drives/APHIS  Projects/eRADS/workingPapers/simulation/host")
+
+library(raster)  
+library(rgdal)
+library(NLMR)
+library(landscapetools)
+library(landscapemetrics)
+library(foreach)
+library(parallel)
+library(doParallel)
+
+
+ncol=3000
+nrow=3000
+resolution=100
+proportion=0.01
+rescale=T
+
+############# Final Decesion #################
+
+#### random pattern ####
+rd=nlm_random(ncol,nrow,resolution)
+prop=0.99
+ts=rd>prop
+ts=reclassify(rd,c(0,prop,0),include.lowest=F,right=T)
+sum(getValues(ts/ts),na.rm = T)/9000000
+
+writeRaster(ts,"RD1e.tif",overwrite=T)
+plot(ts)
+summary(ts)
+
+#### random and random cluster ####
+clu=nlm_randomcluster(ncol,nrow,resolution,proportion,ai=c(0.9,0.1),neighbourhood = 4)
+sum(getValues(clu/clu),na.rm = T)/10000
+
+prop1=c(0.99,0.95,0.90,0.70,0.50)
+prop2=c(0.01,0.05,0.10,0.30,0.50)
+
+clu=nlm_randomcluster(ncol,nrow,resolution,proportion,ai=c(0.99,0.01),neighbourhood = 4)
+
+t0=proc.time()
+cl=makeCluster(5)
+registerDoParallel(cl)
+
+simu=foreach(k=1:5,.packages = c("NLMR","landscapetools","landscapemetrics","raster","igraph"),.export=c("prop1","prop2"))%dopar%{
+  clu=nlm_randomcluster(ncol,nrow,resolution,proportion,ai=c(prop1[k],prop2[k]),neighbourhood = 4)
+  return(clu)
+}
+
+proc.time()-t0
+stopCluster(cl)
+
+cl1=simu[[2]]
+
+#### fractal with 3 levels of autocorrelation ####
+bm=nlm_fbm(ncol,nrow,resolution, fract_dim =0.5,rescale = T)
+bm2=util_binarize(bm,breaks=c(0.1))
+plot(bm2)
+sum(getValues(bm2/bm2),na.rm = T)/9000000
+
+
+fract_dim=c(0.1,0.3,0.5)
+prop=c(0.01,0.05,0.1,0.3,0.5)
+
+
+cl=makeCluster(5)
+registerDoParallel(cl)
+simu=foreach(k=1:5,.packages = c("NLMR","landscapetools","landscapemetrics","raster","igraph"),.export=c("prop","fract_dim"))%dopar%{
+  bm=nlm_fbm(ncol,nrow,resolution, fract_dim =0.5,rescale = T,user_seed = k+100)
+  bm2=util_binarize(bm,breaks=c(prop[k]))
+  return(bm2)
+}
+proc.time()-t0
+stopCluster(cl)
+
+for (i in 1:5){
+  ra=simu[[i]]
+  ra[ra==1]=0
+  ra=ra/ra
+  nm=paste("fracProp",as.character(i),"AC5a.tif",sep="")
+  writeRaster(ra,nm)
+}
+
+
+cl=makeCluster(5)
+registerDoParallel(cl)
+simu=foreach(k=1:5,.packages = c("NLMR","landscapetools","landscapemetrics","raster","igraph"),.export=c("prop","fract_dim"))%dopar%{
+  bm=nlm_fbm(ncol,nrow,resolution, fract_dim =0.5,rescale = T,user_seed = k+500)
+  bm2=util_binarize(bm,breaks=c(prop[k]))
+  return(bm2)
+}
+proc.time()-t0
+stopCluster(cl)
+
+for (i in 1:5){
+  ra=simu[[i]]
+  ra[ra==1]=0
+  ra=ra/ra
+  nm=paste("fracProp",as.character(i),"AC5b.tif",sep="")
+  writeRaster(ra,nm)
+}
+
+
+cl=makeCluster(5)
+registerDoParallel(cl)
+simu=foreach(k=1:5,.packages = c("NLMR","landscapetools","landscapemetrics","raster","igraph"),.export=c("prop","fract_dim"))%dopar%{
+  bm=nlm_fbm(ncol,nrow,resolution, fract_dim =0.5,rescale = T,user_seed = k+100000)
+  bm2=util_binarize(bm,breaks=c(prop[k]))
+  return(bm2)
+}
+proc.time()-t0
+stopCluster(cl)
+
+for (i in 1:5){
+  ra=simu[[i]]
+  ra[ra==1]=0
+  ra=ra/ra
+  nm=paste("fracProp",as.character(i),"AC5c.tif",sep="")
+  writeRaster(ra,nm)
+}
+
+
+cl=makeCluster(5)
+registerDoParallel(cl)
+simu=foreach(k=1:5,.packages = c("NLMR","landscapetools","landscapemetrics","raster","igraph"),.export=c("prop","fract_dim"))%dopar%{
+  bm=nlm_fbm(ncol,nrow,resolution, fract_dim =0.5,rescale = T,user_seed = k+50000)
+  bm2=util_binarize(bm,breaks=c(prop[k]))
+  return(bm2)
+}
+proc.time()-t0
+stopCluster(cl)
+
+for (i in 1:5){
+  ra=simu[[i]]
+  ra[ra==1]=0
+  ra=ra/ra
+  nm=paste("fracProp",as.character(i),"AC5d.tif",sep="")
+  writeRaster(ra,nm)
+}
+
