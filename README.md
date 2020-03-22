@@ -1,7 +1,7 @@
 <h1> eRADS - Landscape Dynamics </h1>
 
 <br/><br/>
-<h2><center> Table of Content </center></h2>
+<center> <h2>Table of Content </h2></center>
 
 <h2> GEE Host Mapping </h2>
 <h3> <a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/GEE%20--%20NAIP%20Segmentation.ipynb"> 1. NAIP Image Segmentation </a> </h3>
