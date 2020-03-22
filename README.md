@@ -1,4 +1,4 @@
-<h1> eRADS - Landscape Dynamics </h1>
+<div><h1> eRADS - Landscape Dynamics </h1></div>
 
 <br/><br/>
 <div align="center"><h2>Table of Content </h2></div>
