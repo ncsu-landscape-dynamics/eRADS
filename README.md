@@ -12,7 +12,7 @@
 <br/>
 
 <h2> Management Optimization </h2>
-<h3> <a href="/blob/master/Management_Optimization/Efficient_raster_To_poly_and_Merge_Adajacent_Polys.Rmd"> 1. Efficient method to convert raster to polygons & Merge adjacent polygons </a>  </h3>
+<h3> <a href="https://github/wanwanliang/blob/master/Management_Optimization/Efficient_raster_To_poly_and_Merge_Adajacent_Polys.Rmd"> 1. Efficient method to convert raster to polygons & Merge adjacent polygons </a>  </h3>
 <h3> <a href="/blob/master/Management_Optimization/Pixel_Based%20Treatment%20Selection%20Method3.R">2. Pixel_Based Treatment Selection Method </a></h3>
 <h3> <a href="blob/master/Management_Optimization/patched_based%20management%20methods.R">3. Patch_Based Treatment Selection Method </a></h3>
 <h3> <a href="blob/master/Management_Optimization/simulation%20of%20different%20host%20pattern%20using%20R">4. Simulation of different host pattern using R</a></h3>
