@@ -6,6 +6,7 @@
 <h2> GEE (Python) Host Mapping </h2>
 <h3> <a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/GEE%20--%20NAIP%20Segmentation.ipynb"> 1. NAIP Image Segmentation </a> </h3>
 <h3><a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/NAIP--OBIA.ipynb">2. Refine Open-Science Presences -- Find Trees within 10-m of The Presences</a></h3>
+<h3><a href="https://nbviewer.jupyter.org/github/ncsu-landscape-dynamics/eRADS/blob/master/GEE_Host_Mapping/Refine%20Open-Science%20Presences%20--%20Clustering%20Segments.ipynb">3. Refine Open-Science Presences -- Clustering Segments/Objects</a></h3>
 <br/>
 
 <h2> Invasion Risk Modeling </h2>
