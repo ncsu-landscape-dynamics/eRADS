@@ -7,9 +7,8 @@
 <h3> <a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/GEE%20--%20NAIP%20Segmentation.ipynb"> 1. NAIP Image Segmentation </a> </h3>
 <h3><a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/NAIP--OBIA.ipynb">2. Refine Open-Science Presences -- Find Trees within 10-m of The Presences</a></h3>
 <h3><a href="https://nbviewer.jupyter.org/github/ncsu-landscape-dynamics/eRADS/blob/master/GEE_Host_Mapping/Refine%20Open-Science%20Presences%20--%20Clustering%20Segments.ipynb">3. Refine Open-Science Presences -- Clustering Segments/Objects</a></h3>
-<br/>
 <h3><a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/Refine%20Presences%20Data--%20Export%20Major%20Cluster%20of%20Presences.ipynb">4. Refine Open-Science Presences -- Export Larggest Cluster as Feature</a></h3>
-<br/>
+<br/><br/>
 
 <h2> Invasion Risk Modeling </h2>
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Invasion%20Risk%20Modelling/Maxent-R-Parallel-iNaturalist-Data.Rmd"> 1. Maxent Parallel SDM in R </a> </h3>
