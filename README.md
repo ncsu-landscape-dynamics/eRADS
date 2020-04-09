@@ -1,4 +1,4 @@
-<div align="center"><h1> Landscape Dynamics </h1></div>
+<div align="center"><h1> Landscape Dynamic </h1></div>
 
 <br/>
 <div align="center"><h2>Table of Content (Navigation Link) </h2></div>
