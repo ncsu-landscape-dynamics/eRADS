@@ -177,7 +177,7 @@ GA= function(number_generation=100,nvar=150,sele=109,psize=200,nbest = 50,cross_
   ftPop=popsPara(pop,inf,n=dim(pop)[1])
   
   for (g in 1:number_generation){
-    pop_bestft=crossOverMute(N=nvar,pop=pop,ftPop=ftPop,nbest = nbest,psize=psize,sele=sele,cross_number = cross_number)
+    pop_bestft=crossOverMute(N=nvar,inputVars=pop,ft=ftPop,nbest = nbest,psize=psize,sele=sele,cross_number = cross_number)
     pop=pop_bestft[[1]]
     bestft=pop_bestft[[2]]
     n=dim(pop)[1]
