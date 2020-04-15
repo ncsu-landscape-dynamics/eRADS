@@ -12,9 +12,6 @@
 
 <br/><br/>
 
-<h2> Invasion Risk Modeling </h2>
-<h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Invasion%20Risk%20Modelling/Maxent-R-Parallel-iNaturalist-Data.Rmd"> 1. Maxent Parallel SDM in R </a> </h3>
-<br/>
 
 <h2> Management Optimization </h2>
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Management_Optimization/Efficient_raster_To_poly_and_Merge_Adajacent_Polys.Rmd"> 1. Efficient method to convert raster to polygons & Merge adjacent polygons </a>  </h3>
@@ -35,4 +32,8 @@
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Web%20Scrapping%20for%20Data/Web%20Scraping%20CABI%20to%20see%20if%20distribution%20map%20is%20available%20for%20given%20species.ipynb"> 2. Check whether distribution map is available for given species on CABI</a> </h3>
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Web%20Scrapping%20for%20Data/cabiMapSearchParallel.py"> 3. Check whether distribution map is available for given species on CABI in parallel</a> </h3>
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Web%20Scrapping%20for%20Data/Web%20Scrapping%20--%20Batch%20Download%20CABI%20Species%20Distribution%20Data%20Automatically.ipynb"> 4. Batch Download CABI Species Distribution Data </a> </h3>
+<br/>
+
+<h2> Invasion Risk Modeling </h2>
+<h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Invasion%20Risk%20Modelling/Maxent-R-Parallel-iNaturalist-Data.Rmd"> 1. Maxent Parallel SDM in R </a> </h3>
 <br/>
