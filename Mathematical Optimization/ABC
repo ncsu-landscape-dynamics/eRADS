@@ -10,7 +10,7 @@ setwd("C:/Users/wliang5/Desktop/Optimi_test/smAOI")
 hzd3=readOGR(".","PixelRank")
 
 ## hzd3 is a polygondataframe, with each polygon represent an infested pixel. Polygons in hzd3 is ranked based on the infestation potential.
-
+# in this case, hzd3 has 135 polygons representing 135 infested pixel. The objective is to select 50 pixels for treatment to achieve minimum infested area the next year
 #######################################  ABC  ############################
 
 ## Define function of selecting pixels for treatment based on weight of each pixel
@@ -124,6 +124,10 @@ popsPara= function(pop,inf,n=dim(pop)[1],ncore=60){
 library(ggplot2)
 
 ############ Method 1 -- Continuous -- Delete first 10 histogram by every 30 generations#####################
+
+## could set any weight as a prior, this weight will be soon upadated during the generations, better weight lead to better results at the beginning.
+## but uniform weight will also achieve the same results with longer generations.
+
 wt= c(rep(100,length(hzd3)))
 wt= c(rep(5,50),rep(3,40),rep(1,45))
 
