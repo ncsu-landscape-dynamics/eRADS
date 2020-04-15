@@ -9,8 +9,12 @@ library(rgeos)
 setwd("C:/Users/wliang5/Desktop/Optimi_test/smAOI")
 hzd3=readOGR(".","PixelRank")
 
+## hzd3 is a polygondataframe, with each polygon represent an infested pixel. Polygons in hzd3 is ranked based on the infestation potential.
 
 #######################################  ABC  ############################
+
+## Define function of selecting pixels for treatment based on weight of each pixel
+
 ini_sele=function(nvar=135,sele=109,psize=5000,wt){
   id=1:nvar
   pop=as.data.frame(matrix(0,nrow=psize,ncol=sele))
@@ -23,6 +27,8 @@ ini_sele=function(nvar=135,sele=109,psize=5000,wt){
   
   return(pop)
 }
+
+## Define functioin to run pops_model with the selected pixel for treatment
 pops= function(trt,inf){
   
   trt=hzd3[trt,]
@@ -83,6 +89,8 @@ pops= function(trt,inf){
   mean=mean(df[1:20,1])
   return(mean)
 }
+
+## define a function to run pops_model in parallel
 popsPara= function(pop,inf,n=dim(pop)[1],ncore=60){
   ft=data.frame(matrix(0,nrow=n,ncol=1))
   colnames(ft)="Fitness"
