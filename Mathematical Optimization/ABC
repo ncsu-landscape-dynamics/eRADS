@@ -1,0 +1,235 @@
+
+
+library(raster)
+library(PoPS)
+library(rgdal)
+library(rgeos)
+
+
+setwd("C:/Users/wliang5/Desktop/Optimi_test/smAOI")
+hzd3=readOGR(".","PixelRank")
+
+
+#######################################  ABC  ############################
+ini_sele=function(nvar=135,sele=109,psize=5000,wt){
+  id=1:nvar
+  pop=as.data.frame(matrix(0,nrow=psize,ncol=sele))
+  
+  
+  for (i in 1:psize){
+    pop[i,1:sele]=as.numeric(sample(id,sele,prob=wt))
+  }
+  pop=as.matrix(pop)
+  
+  return(pop)
+}
+pops= function(trt,inf){
+  
+  trt=hzd3[trt,]
+  trt=gUnionCascaded(trt)
+  toRa=rasterize(trt,inf,field=1,background=0)
+  
+  trt=list(as.matrix(toRa))
+  df=data.frame(matrix(0,nrow=20,ncol=1))
+  
+  for (j in 1:20){
+    
+    random_seed= j*1000+50
+    
+    
+    data <- pops_model(random_seed = random_seed, 
+                       use_lethal_temperature = use_lethal_temperature, 
+                       lethal_temperature = lethal_temperature, 
+                       lethal_temperature_month = lethal_temperature_month,
+                       
+                       infected = infected_speci[[1]],
+                       susceptible = susceptible_speci[[1]],
+                       total_plants = total_pl[[1]],
+                       mortality_on = mortality_on,
+                       mortality_tracker = infected_speci[[1]]*0,
+                       mortality = infected_speci[[1]]*0,
+                       treatment_maps = trt,
+                       
+                       use_movements=FALSE,
+                       movements=list(0,0,0,0,0),
+                       movements_dates= start_time,
+                       
+                       
+                       treatment_dates = c("2019-03-01"),
+                       pesticide_duration=c(0),
+                       resistant = infected_speci[[1]]*0,
+                       weather = weather,
+                       temperature = temperature,
+                       weather_coefficient = wc,
+                       ew_res = ew_res, ns_res = ns_res, num_rows = num_rows, num_cols = num_cols,
+                       time_step = time_step, reproductive_rate = reproductive_rate[[2]],
+                       mortality_rate = mortality_rate, mortality_time_lag = mortality_time_lag,
+                       season_month_start = season_month_start, season_month_end = season_month_end,
+                       start_date = start_time, end_date = end_time,
+                       treatment_method = "all infected", 
+                       
+                       natural_kernel_type = natural_kernel_type[[1]], anthropogenic_kernel_type = anthropogenic_kernel_type[[1]], 
+                       use_anthropogenic_kernel = use_anthropogenic_kernel, percent_natural_dispersal = percent_natural_dispersal[[1]],
+                       natural_distance_scale = natural_distance_scale[[2]], anthropogenic_distance_scale = anthropogenic_distance_scale[[1]], 
+                       natural_dir = natural_dir[[1]], natural_kappa = natural_kappa[[1]],
+                       anthropogenic_dir = anthropogenic_dir[[1]], anthropogenic_kappa = anthropogenic_kappa[[1]],output_frequency = "year")
+    
+    area=data$area_infected
+    area=area/10000
+    
+    df[j,1]=area
+  }
+  
+  mean=mean(df[1:20,1])
+  return(mean)
+}
+popsPara= function(pop,inf,n=dim(pop)[1],ncore=60){
+  ft=data.frame(matrix(0,nrow=n,ncol=1))
+  colnames(ft)="Fitness"
+  
+  cl=makeCluster(ncore)
+  registerDoParallel(cl)
+  
+  result=foreach(k=1:n,.combine = rbind,.export = c("pops","pop","hzd3","inf","use_lethal_temperature","lethal_temperature","lethal_temperature_month",
+                                                    "infected_speci","susceptible_speci","total_pl","mortality_on","weather","temperature","wc",
+                                                    "ew_res","ns_res","num_rows","num_cols","time_step","reproductive_rate","mortality_rate","mortality_time_lag",
+                                                    "season_month_start", "season_month_end","start_time","end_time","natural_kernel_type","anthropogenic_kernel_type",
+                                                    "use_anthropogenic_kernel", "percent_natural_dispersal","natural_distance_scale", "anthropogenic_distance_scale",
+                                                    "natural_dir", "natural_kappa","anthropogenic_dir", "anthropogenic_kappa"),.packages = c("rgdal","raster","PoPS","rgeos"))%dopar%
+    
+    {
+      vars=unlist(as.list(pop[k,]))
+      return(pops(vars,inf))
+      
+    }
+  
+  stopCluster(cl)
+  
+  ft=data.frame(result)
+  colnames(ft)="Fitness"
+  
+  return(ft)
+  
+}
+
+
+library(ggplot2)
+
+############ Method 1 -- Continuous -- Delete first 10 histogram by every 30 generations#####################
+wt= c(rep(100,length(hzd3)))
+wt= c(rep(5,50),rep(3,40),rep(1,45))
+
+ve=data.frame(matrix(0,ncol=2))
+df=data.frame(matrix(0,ncol=2))
+n=0
+
+t0=proc.time()
+for (t in 1:500){
+  print(t)
+  for (g in 1:30){
+    n=n+1
+    pop = ini_sele(135,50,5000,wt)
+    pop=pop[!duplicated(pop),]
+    dim(pop)
+    
+    ftPop=popsPara(pop,inf,dim(pop)[1],ncore=30)
+    
+    
+    df[n,1]=min(ftPop)
+    df[n,2]=t
+    ftPop2=ftPop[order(ftPop$Fitness),]
+    pop2=pop[order(ftPop$Fitness),]
+    pop3=pop2[1:20,]
+    
+    df[n,1]=min(ftPop)
+    df[n,2]=mean(ftPop2[1:20])
+    #print(min(ftPop))
+    print(paste('Minimum is',min(ftPop),"; " , "Mean of best 20 is", round(mean(ftPop2[1:20]),2)),sep="")
+    
+    pop_list=unlist(as.vector(pop3))
+    
+    
+    ve=c(pop_list,ve)
+    hist(unlist(ve))
+    
+    #print(length(unique(pop_list)))
+    
+    nm=paste("hist",as.character(g),'.png',sep="")
+    png(nm)
+    hist(pop_list)
+    dev.off()
+    
+    for (i in 1:135){
+      pop_df=as.data.frame(unlist(ve))
+      colnames(pop_df)="index"
+      sub=pop_df[pop_df$index==i,]
+      
+      if(length(sub)==0){wt[i]=wt[i-1]}
+      else {wt[i]=length(sub)/length(ve)}
+    }
+    wt=as.integer(100*(wt-min(wt))/((max(wt)-min(wt))))
+    
+  }
+  
+  ve=ve[-c(1:10000)]
+}
+proc.time()-t0
+
+
+############ Method 2-- Only use elements lower than threshold (stuck often) #####################
+wt= c(rep(5,50),rep(3,40),rep(1,45))
+ve=c()
+
+min=550
+n=0
+for (g in 1:500){
+  
+  pop = ini_sele(135,50,5000,wt)
+  pop=pop[!duplicated(pop),]
+  dim(pop)
+  
+  ftPop=popsPara(pop,inf,dim(pop)[1],ncore=30)
+  
+  ftPop2=ftPop[order(ftPop$Fitness),]
+  pop2=pop[order(ftPop$Fitness),]
+  pop3=pop2[1:20,]
+  
+  # print(min(ftPop))
+  minF= mean(ftPop2[1:20])
+  
+  if (minF<min){
+    min=minF
+    
+    ftPop2=ftPop[order(ftPop$Fitness),]
+    ftPop2=as.data.frame(ftPop2)
+    pop2=pop[order(ftPop$Fitness),]
+    pop3=pop2[1:20,]
+    
+    pop_list=as.vector(pop3)
+    ve=c(pop_list,ve)
+    #ve=pop_list
+    hist(ve)
+    
+    for (i in 1:length(hzd3)){
+      pop_df=as.data.frame(ve)
+      sub=pop_df[pop_df$ve==i,]
+      
+      if(length(sub)==0){wt[i]=wt[i-1]}
+      else {wt[i]=length(sub)/length(ve)}
+    }
+    wt=as.integer(100*(wt-min(wt))/((max(wt)-min(wt))))
+    
+    print(min)
+  } 
+  else {print(min)}
+  
+  
+  #print(length(unique(pop_list)))
+  
+  # nm=paste("hist",as.character(g),'.png',sep="")
+  #png(nm)
+  #hist(pop_list)
+  #dev.off()
+  
+}
+
