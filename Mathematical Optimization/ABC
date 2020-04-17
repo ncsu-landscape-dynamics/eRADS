@@ -161,7 +161,7 @@ for (t in 1:100){
   p=0
   ftAll=c()
     
-  while (p<50){
+  while (p<200){
     pop = ini_sele(135,50,50000,wt)
     ftPop=popsPara(pop,inf,dim(pop)[1],ncore=60)
     pop2= pop[order(ftPop$Fitness),]
