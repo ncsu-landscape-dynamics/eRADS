@@ -121,3 +121,93 @@ popsPara= function(pop,inf,n=dim(pop)[1],ncore=60){
 }
 
 
+df=data.frame(matrix(0,ncol=2))
+n=0
+
+t0=proc.time()   
+t=1
+for (t in 1:100){
+  
+  if (t==1){
+    
+    wt= c(rep(1000,135))
+    
+    pop = ini_sele(135,50,50000,wt)
+    ftPop=popsPara(pop,inf,dim(pop)[1],ncore=60)
+    ftPop2 = ftPop[order(ftPop$Fitness),]
+    pop2 = pop[order(ftPop$Fitness),]
+    pop3=pop2[1:200,]
+    
+    ve=unlist(as.vector(pop3))
+    hist(unlist(ve))
+    
+    
+    for (i in 1:135){
+      pop_df=as.data.frame(unlist(ve))
+      colnames(pop_df)="index"
+      sub=pop_df[pop_df$index==i,]
+      
+      if(length(sub)==0){wt[i]=wt[i-1]}
+      else {wt[i]=length(sub)/length(ve)}
+    }
+    wt=as.integer(10000*((wt-min(wt))/(max(wt)-min(wt))+0.0001))
+    
+    min=mean(ftPop2[1:10])
+    er=min
+    }
+  
+  
+  pop3=as.data.frame(matrix(0,ncol=50))
+  p=0
+  ftAll=c()
+    
+  while (p<50){
+    pop = ini_sele(135,50,50000,wt)
+    ftPop=popsPara(pop,inf,dim(pop)[1],ncore=60)
+    pop2= pop[order(ftPop$Fitness),]
+    ftPop2= ftPop[order(ftPop$Fitness),]
+    #ftPop2[1:20,]
+    pop2 = pop2[ftPop2<er,]
+    pop2=as.data.frame(matrix(pop2,ncol=50))
+    
+    p = p+ dim(pop2)[1]
+    
+    pop3=rbind(pop3,pop2)
+    ftAll=c(ftAll,ftPop[ftPop$Fitness<er,1])
+  }
+  
+  ftAll2=ftAll[order(ftAll)]
+  pop3=pop3[-1,]
+  
+  if (t==1){pop3=pop3[1:200,]}
+  
+  er= mean(ftAll2[1:10])
+  min=min(er,min)
+  er=min
+  
+  
+  df[t,1]=er
+  df[t,2]=min(ftAll)
+  
+  print(paste("generation: ", t, "; mean of best 10 is ", round(mean(ftAll2[1:10]),2), "; min of best 200 is ", round(min(ftAll),2),sep=""))
+  
+  
+  ve=unlist(as.vector(pop3))
+  hist(unlist(ve),breaks=seq(0,135,5))
+  
+  #nm=paste("hist",as.character(g),'.png',sep="")
+  #png(nm)
+  #hist(pop_list)
+  #dev.off()
+  
+  for (i in 1:length(hzd3)){
+    pop_df=as.data.frame(unlist(ve))
+    colnames(pop_df)="index"
+    sub=pop_df[pop_df$index==i,]
+    
+    if(length(sub)==0){wt[i]=wt[i-1]}
+    else {wt[i]=length(sub)/length(ve)}
+  }
+  wt=as.integer(100*((wt-min(wt))/(max(wt)-min(wt))+0.0001))
+  t=t+1
+}
