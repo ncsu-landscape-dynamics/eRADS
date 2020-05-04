@@ -318,3 +318,198 @@ hzd=ranks[[2]]
 epidhzd=ranks[[3]]
 
 
+
+ ######################################## 5. Budget Limit & Location Selection #######################################
+#### Method 1 -- Select all locations with same detection confidence ####
+
+
+den=surv_den(0.80,pden,0.1)
+sum(getValues(den),na.rm = T)/sum(getValues(pden/pden),na.rm=T)
+plot(den,main="Trap Density")
+plot(cty,add=T,border="blue")
+plot(host2bf,add=T,border="red")
+den2=crop(den,host2bf)
+den2=mask(den2,host2bf)
+sum(getValues(den2),na.rm = T)*77
+
+
+#### Method 2 & 3  Optimal Detection Confidence based on Locations or Populations ####
+confi_all = function(confi,p_den,sensi,budget,cost_per_survey){
+  
+  n=budget/cost_per_survey
+  survDen=surv_den(confi,p_den,sensi)
+  avl=getValues(survDen)
+  avl=as.data.frame(avl)
+  avl$ID=1:dim(avl)[1]
+  avl$Pden=getValues(p_den)
+  avl2=avl[order(avl$avl,decreasing = F,na.last = NA),]
+  avl2=avl2[avl2$avl>0,]
+  avl2$cumu_number=sapply(1:dim(avl2)[1],function(i) sum(avl2$avl[1:i]))
+  
+  avl3=avl2[avl2$cumu_number<= n & avl2$cumu_number>0,]
+  
+  n_sel=dim(avl3)[1]
+  n_all=sum(getValues(p_den/p_den),na.rm = T)
+  
+  conf_loca= (n_sel/n_all)*confi
+  conf_popu= (sum(avl3$Pden)/sum(getValues(p_den),na.rm = T))*confi
+  perc_loca= (n_sel/n_all)
+  
+  confall=list(conf_loca,conf_popu,perc_loca)
+  return(confall)
+}
+
+optiConfi = function(p_den,sensi,budget,cost_per_survey,confiMin=0.10,confiMax=0.99){
+  require(parallel)
+  require(foreach)
+  require(doParallel)
+  
+  cl=makeCluster(detectCores()-6)
+  registerDoParallel(cl)
+  
+  confi=seq(confiMin,confiMax,0.01)
+  n=length(confi)
+  
+  confAll= foreach(i=1:n, .combine = rbind,.export = c("confi_all","sensi","surv_den"),.packages = c("raster","rgdal","rgeos")) %dopar% {
+    confall=confi_all(confi[i],p_den,sensi,budget,cost_per_survey)
+    result=as.data.frame(matrix(c(confall[[1]],confall[[2]]),nrow=1,ncol=2))
+    return(result)
+  }
+  
+  stopCluster(cl) 
+  results=as.data.frame(confAll) 
+  colnames(results)=c("Location","Population")
+  results$confi=seq(confiMin,confiMax,0.01)
+  optiConfi_location=results[which.max(results$Location),]$confi
+  optiConfi_population=results[which.max(results$Population),]$confi
+  
+  ls=list(results,optiConfi_location,optiConfi_population)
+  return(ls)
+}
+
+opti=optiConfi(p_den,sensi=0.1,budget=2000000,cost_per_survey=77,confiMin=0.30,confiMax=0.99)
+optiV=opti[[1]]
+opti[[2]]
+opti[[3]]
+confi=seq(0.30,0.99,0.01)
+opti$confi=confi
+par(mfrow=c(1,1))
+
+plot(optiV$Location~optiV$confi,font.lab=2,type="b",pch=2,ylab="Detection Confidence of All Locations",col="blue",xlab="Detection Confidence for Each Location",main="")
+plot(optiV$Population~confi,xlab="Detection Confidence for Each Location",ylab="Detection Confidence of All Populations",font.lab=2,type="b",pch=2,col="blue")
+
+
+results=percent_locat(pden,0.7166287,0.97,0.1)
+plot(results[[1]])
+plot(cty2,add=T,border="blue")
+results[[2]]
+results[[3]]
+den=results[[1]]
+den2=crop(den,host2bf)
+den2=mask(den2,host2bf)
+sum(getValues(den2),na.rm = T)*77
+
+#### Method 4 selection locations with intensity higher than a threshold ###
+results2=pop_thresh(pden,0.5,0.95,0.1)
+results2[[1]]
+surv_den=results2[[2]]
+surv_den2=surv_den/(sum(getValues(surv_den),na.rm = T)/25974)
+pdetc=p_dtc(surv_den2,pden,0.1)
+plot(surv_den2)
+plot(cty2,add=T,border="blue")
+
+#### Regular surveillance strategy ####
+reg_surv=function(p_den,sensi,budget,cost_per_survey){
+  
+  n=sum(getValues(p_den/p_den),na.rm = T)
+  nSurv=budget/cost_per_survey
+  
+  survDen=nSurv/n
+  conf=p_dtc(survDen,p_den,sensi)
+  meanconf=sum(getValues(conf),na.rm=T)/n
+  results=list(survDen,conf,meanconf)
+}
+
+regSurv=reg_surv(p_den,sensi,budget,cost_per_survey)
+survDen=regSurv[[1]]
+confi=regSurv[[2]]
+meanconfi=regSurv[[3]]
+survDen
+plot(confi)
+plot(cty2,add=T,border="blue")
+summary(confi)
+
+
+
+
+
+#### Method 5 ####
+infestation_potential
+
+confi_all = function(confi,p_den,sensi,budget,cost_per_survey,infestation_potential){
+  
+  n=budget/cost_per_survey
+  survDen=surv_den(confi,p_den,sensi)
+  avl=extract(survDen,infestation_potential)
+  avl=as.data.frame(unlist(avl))
+  avl[is.na(avl)]=0
+  avl2=avl
+  colnames(avl2)="avl"
+  avl2$cumu_number=sapply(1:dim(avl2)[1],function(i) sum(avl2$avl[1:i]))
+  
+  avl3=avl2[avl2$cumu_number<= n & avl2$cumu_number>0,]
+  
+  n_sel=dim(avl3)[1]
+  n_all=sum(getValues(p_den/p_den),na.rm = T)
+  
+  conf_loca= (n_sel/n_all)*confi
+  perc_loca= (n_sel/n_all)
+  
+  confall=list(conf_loca,perc_loca)
+  return(confall)
+}
+
+optiConfi = function(p_den,sensi,budget,cost_per_survey,confiMin=0.10,confiMax=0.99,infestation_potential){
+  require(parallel)
+  require(foreach)
+  require(doParallel)
+  
+  cl=makeCluster(detectCores()-6)
+  registerDoParallel(cl)
+  
+  confi=seq(confiMin,confiMax,0.01)
+  n=length(confi)
+  
+  confAll= foreach(i=1:n, .combine = rbind,.export = c("confi_all","sensi","surv_den","infestation_potential"),.packages = c("raster","rgdal","rgeos")) %dopar% {
+    confall=confi_all(confi[i],p_den,sensi,budget,cost_per_survey,infestation_potential)
+    result=as.data.frame(matrix(c(confall[[1]],confall[[2]]),nrow=1,ncol=2))
+    return(result)
+  }
+  
+  stopCluster(cl) 
+  results=as.data.frame(confAll) 
+  colnames(results)=c("Location_Confi","Location_Percent")
+  results$confi=seq(confiMin,confiMax,0.01)
+  optiConfi_location=results[which.max(results$Location_Confi),]$confi
+  
+  ls=list(results,optiConfi_location)
+  return(ls)
+}
+
+opti=optiConfi(p_den,sensi=0.1,budget=2000000,cost_per_survey=77,confiMin=0.30,confiMax=0.99,infestation_potential)
+optiV=opti[[1]]
+opti[[2]]
+opti[[3]]
+confi=seq(0.30,0.99,0.01)
+opti$confi=confi
+par(mfrow=c(1,1))
+plot(optiV$Location_Confi~optiV$confi,xlab="Detection Confidence for Each Location",ylab="Detection Confidence of All Populations",font.lab=2,type="b",pch=2,col="blue")
+
+survD=surv_den(0.78,pden,0.1)
+n2=round(length(infestation_potential)*0.9157175)
+infestation_potential2=infestation_potential[1:n2,]
+survD2=crop(survD,infestation_potential2)
+survD2=mask(survD2,infestation_potential2)
+plot(survD2)
+plot(cty2,add=T,border="blue")
+sum(getValues(survD2),na.rm=T)
