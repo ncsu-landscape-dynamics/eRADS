@@ -1,55 +1,68 @@
----
-title: "Maxent Parallel SDM in R"
-output: html_document
----
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-## Get Distribution Data
-```{r step1, include=F}
-
-## Download species distribution data from iNaturalist or/and CABI.org
-
-# get european grapevine moth (EGVM) from iNaturalist
+##### get data from iNaturalist  #####
 library(rinat)
-inat=get_inat_obs(query="Lobesia botrana")
+inat=get_inat_obs(query="Honeysuckles")
 inat2=inat[,c("longitude","latitude")]
+dim(inat)
+dim(inat2)
 
-# merge EGVM data downloaded from CABI
-setwd("C:/Users/liang/Desktop/EGVM/.")
-cabi=read.csv("LobesiaBotrana.csv")
+inat_b=get_inat_obs(taxon_name="honeysuckles")
+inat2_b=inat_b[,c("longitude","latitude")]
+dim(inat2_b)
 
-cabi2=cabi[,c("Longitude","Latitude")]
-colnames(cabi2)=colnames(inat2)
-dtall=rbind(inat2,cabi2)
-#write.csv(dtall,"Distribution_EGVM.csv",row.names = F)
-```
+head(inat2)
+head(inat2_b)
 
+inatA=rbind(inat2,inat2_b)
+
+##### Get CABI Data  #####
+setwd("Q:/Shared drives/APHIS  Projects/eRADS/caseStudy/ECFF/host/HS")
+c=list.files(".",".csv$")
+c
+
+crds=data.frame(matrix(c(0,0),ncol = 2))
+colnames(crds)=c("Latitude","Longitude")
+
+for (i in 1:length(c)){
+  dt=read.csv(c[i],header = T)
+  dt2=dt
+  dt2$Latitude=as.numeric(unlist(dt2$Latitude))
+  dt2$Longitude=as.numeric(unlist(dt2$Longitude))
+  latlong = cbind(dt2$Latitude,dt2$Longitude)
+  
+  colnames(latlong)=colnames(crds)
+  
+  crds=rbind(crds, latlong) 
+  
+  if (i==1){crds = crds[-1,]}
+}
+
+crds
+dim(crds)
+crds = crds[,c(2,1)]
+colnames(crds) = colnames(inatA)
+
+dtall=rbind(inatA,crds)
+dim(dtall)
+
+dtall = unique(dtall[,1:2])
+dim(dtall)
+
+#write.csv(dtall,"HS.csv",row.names = F)
 
 ## Delineate Region where PAs or Background Data should be Extracted 
-
-```{r step2}
 library(rgdal)
 library(raster)
 
+dtall=dtall[complete.cases(dtall),]
 n=dim(dtall)[1]
 occur=SpatialPointsDataFrame(dtall,data=data.frame(ID=1:n))
 crs(occur)="+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 
 
-bb=bbox(occur)
-b_poly <- as(extent(as.vector(t(bb))), "SpatialPolygons")
-b_poly=SpatialPolygonsDataFrame(b_poly,data=data.frame(ID=1))
-
-#writeOGR(b_poly,".","EGVMPresenceBB",driver = "ESRI Shapefile")
-```
-
-## Construct SDM in the United States with MAXENT 
-```{r step 3}
-
 library(dismo)
 library(geosphere)
+library(maptools)
 
 ## for occurrence data, remove points with distance <dis to remove data biase
 dis_filter = function(pts,dist){
@@ -69,48 +82,51 @@ dis_filter = function(pts,dist){
   }
   return(pts)
 }
-
 occur2=dis_filter(occur,3)
+data("wrld_simpl")
+plot(wrld_simpl)
+us=wrld_simpl[wrld_simpl$ISO2=="US",]
+plot(us)
 
-setwd("C:/Users/liang/Desktop/EGVM/bioclim/wc2.0_2.5m_bio/")
-vars=list.files(".",".tif$")
-ra=raster(vars[1])
+occur2= crop(occur2,us)
+plot(occur2)
+occur2=occur2[occur2@coords[1,]>min(occur2@coords[1,]),]
+bb=bbox(occur2)
+b_poly <- as(extent(as.vector(t(bb))), "SpatialPolygons")
+b_poly=SpatialPolygonsDataFrame(b_poly,data=data.frame(ID=1))
+
+
+vars= getData('worldclim',var='bio',res=2.5)
 vars2=stack(vars)
 
+
 ## generate random points as background data for Maxent model within the given spatial region
-bg_points=sampleRandom(raster(vars[1]),10000,sp=T,na.rm=T,ext=extent(b_poly),xy=T)
+bg_points=sampleRandom(raster(vars,1),10000,sp=T,na.rm=T,ext=extent(b_poly),xy=T)
 
-```
 
-```{r plot1, echo=T }
-plot(ra)
-plot(b_poly,add=T)
+plot(b_poly)
 plot(bg_points,add=T,col="blue",cex=0.5)
 plot(occur,add=T,col="red",pch=4,cex=1.5)
 
-```
 
 ### extract variable values for all Occurrence and Background Points
-```{r step3}
 preVar=extract(vars2,occur2)
 bkVar=extract(vars2,bg_points)
 preVar=as.data.frame(preVar)
 bkVar=as.data.frame(bkVar)
 head(preVar)
-
 feas=rbind(preVar,bkVar)
 resp=c(rep(1,dim(preVar)[1]),rep(0,dim(bkVar)[1]))
 
 ### load predictors for projection region, these predictors should have the same names with the ones for modeling construction
-setwd("C:/Users/liang/Desktop/EGVM/bioclim/usAOI")
-predictors=stack(list.files(".",".tif$")) 
-```
+
+predictors=vars
+
 
 
 
 ## define a maxent function using prop data for training. For each run, the function return testing AUC and the trained maxent model
 
-```{r step4}
 maxentRun= function(feas,resp,prop,i){
   n=dim(feas)[1]
   n2=n*prop
@@ -133,32 +149,30 @@ maxentRun= function(feas,resp,prop,i){
   return(ls)
 }
 
-```
 ## Parallel multiple runs to speed up
 
-```{r,results='asis'}
+
 library(parallel)
 library(foreach)
 library(doParallel)
+library(rJava)
+library(dismo)
+
+Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jre1.8.0_251/') # for 64-bit version
+#Sys.setenv(JAVA_HOME='C:\\Program Files (x86)\\Java\\jre1.8.0_241/') # for 32-bit version
+library(rJava)
 
 detectCores()
-cl=makeCluster(10)
+cl=makeCluster(50)
 registerDoParallel(cl)
-
 comb=function(auc,map){
   au=c(auc)
   mp=stack(map)
   return(list(au,mp))
 }
-
 multiRuns=list()
 
-# only try 4 runs here, could be more
-```
-
-```{r, results='asis'}
-
-multiRuns= foreach(i=1:10,  .multicombine = T,.export=c("maxent","evaluate"),.packages=c("dismo","rJava")) %dopar% {
+multiRuns= foreach(i=1:50,  .multicombine = T,.export=c("maxent","evaluate"),.packages=c("dismo","rJava")) %dopar% {
   outs=maxentRun(feas,resp,0.8,i)
   auc=outs[[2]]
   map=predict(outs[[1]],predictors)
@@ -166,17 +180,18 @@ multiRuns= foreach(i=1:10,  .multicombine = T,.export=c("maxent","evaluate"),.pa
   list(auc,map)
 }
 
+stopCluster(cl)
+
 multiRuns[[1]]
 multiRuns[[2]]
-
 auc=multiRuns[[1]][[1]]
 map=stack(multiRuns[[1]][[2]])
 
-for (i in 2:10){
+for (i in 2:50){
   auc=c(auc,multiRuns[[i]][1])
   map=stack(map,multiRuns[[i]][[2]])
 }
-
 auc
 map
-```
+
+plot(raster(map,1))
