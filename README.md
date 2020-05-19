@@ -37,4 +37,5 @@
 
 <h2> Invasion Risk Modeling </h2>
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Invasion%20Risk%20Modelling/Maxent-R-Parallel-iNaturalist-Data.Rmd"> 1. Maxent Parallel SDM in R </a> </h3>
+<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Invasion%20Risk%20Modelling/Efficient%20spatial%20points%20thinning%20for%20large%20dataset.R">2. Efficient spatial points thinning for large dataset to decrease potential sampling biase</h3>
 <br/>
