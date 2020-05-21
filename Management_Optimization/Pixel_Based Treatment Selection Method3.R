@@ -348,8 +348,91 @@ wvfrtHzd = function(inf,width=1000, distance_classes=6, host,buffer,budget,  cos
 }
 
 
+#### Below is the best method ####
+####### Method 6 -- Infestation Potential  --- Calculated based on infestation level, host availability, dispersal kernel, and weather coefficient ######
+ip_rank = function(inf, host, np, a, rep, Wcoef, ncore){
+  
+  host_uninf = host
+  host_uninf[inf>0]=0
+  
+  
+  inf_pts = rasterToPoints(inf,fun=function(x){x>0} ,spatial=T)
+  names(inf_pts)="inf_level"
+  n = length(inf_pts)
+  wc_va = extract(Wcoef,inf_pts)
+  inf_pts$inf_level = inf_pts$inf_level 
+  
+  host_pts = rasterToPoints(host_uninf, fun=function(x){x>0}, spatial=T)
+  names(host_pts)="host"
+  host_wether = extract(Wcoef, host_pts)
+  #host_pts$host = host_pts$host/host_pts$host
+  host_pts$host =  host_pts$host * host_wether
+  host_pts$host =  host_pts$host
+  
+  
+  #inf_pts = spTransform(inf_pts, CRS("+init=epsg:4326"))
+  #host_pts = spTransform(host_pts,CRS("+init=epsg:4326") )
+  
+  cl = makeCluster(ncore)
+  registerDoParallel(cl) 
+  
+  ip_va = foreach(i=1:n, .combine=rbind, .export=c("host_pts","inf_pts"), .packages = c('raster','rgdal','geosphere','rgeos'))%dopar%{
+    dist= gDistance(inf_pts[i,], host_pts,byid=T)
+    
+    dist2 = 1/(dist^2 + a^2)
+    dist2[dist>10000] = 0
+    dist2[dist>5000] = 0
+    
+    #infe_pot = (inf_pts$inf_level[i]*rep)^np*dist2*host_pts$host
+    
+    infe_pot = inf_pts$inf_level[i]*rep*wc_va[i]*np*dist2*host_pts$host
+    infe_potS = sum(infe_pot)
+    return(infe_potS)
+  }
+  
+  stopCluster(cl)
+  
+  inf_pts$ip = as.vector(ip_va)
+  inf_ply = rasterToPolygons(inf, fun=function(x){x>0},na.rm = T)
+  inf_ply$ip = inf_pts$ip
+  inf_ply2 = inf_ply[order(inf_ply$ip,decreasing = T),]
+  #inf_pts2 = spTransform(inf_pts2, crs(inf))
+  return(inf_ply2)
+}
+ip_treat = function(ip_rank_ply, budget, buffer, cost_per_meter_sq, inf){
+  
+  area=budget/cost_per_meter_sq
+  pixelArea=xres(inf)*yres(inf)
+  
+  
+  ply_bf=buffer(ip_rank_ply,width=buffer,dissolve=F)
+  n=floor(area/pixelArea)+2
+  ply_bf$Cumu_Area=0
+  
+  for (i in 1:n){
+    trt=gUnionCascaded(ply_bf[1:i,])
+    ply_bf$Cumu_Area[i]=area(trt)
+  }
+  
+  treatment=ply_bf[ply_bf$Cumu_Area<= area & ply_bf$Cumu_Area!=0,]
+  treatment=gUnionCascaded(treatment)
+  
+  df=area-area(treatment)
+  nontr=ply_bf[ply_bf$Cumu_Area> area,]
+  
+  if (df>0){
+    crds=gCentroid(nontr[1,])
+    crds_bf=buffer(crds,width=sqrt(df/pi))
+    treatment=gUnion(treatment,crds_bf)
+  }
+  
+  treatmentRa=rasterize( treatment,inf,field=1,background=0,getCover=T)
+  treatmentLs=list(as.matrix(treatmentRa))
+  return(treatmentLs)
+}
 
-######## Method 6 --  based on number of uninfested host within different  ####
+
+######## Method 7 --  based on number of uninfested host within different  ####
         ## size of buffer for each pixel, the buffer size is determined based on 
         ## dispersal kernel and climatic factors
 
