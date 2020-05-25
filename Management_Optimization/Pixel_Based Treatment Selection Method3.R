@@ -6,22 +6,81 @@
 # ply: the polygon converted from the infested raster, the main use of ply is to exclude the infested host
 # pixelArea: the area of each pixel
 # distance_classes: only used for Method 5 to indicate how many classes your want to cluster the infested pixel based on 
-  #  their distance to the wavefront.
+#  their distance to the wavefront.
 # Wcoef: mean weather coefficient during the simulation period
 # Nstep: possible number of reproduction times 
+###################### Raster to polygons ##############################
+
+ra2plyMerge <- function(x, outshape=NULL, gdalformat = 'ESRI Shapefile',pypath="C:\\Program Files\\GDAL\\gdal_polygonize.py") {
+  
+  require(raster)
+  require(rgdal)
+  
+  x=reclassify(x,c(1,Inf,1))
+  
+  
+  dir=getwd()
+  on.exit(setwd(dir))
+  setwd(dirname(pypath))
+  
+  if (!is.null(outshape)) {
+    outshape <- sub('\\.shp$', '', outshape)
+    f.exists <- file.exists(paste(outshape, c('shp', 'shx', 'dbf'), sep='.'))
+    if (any(f.exists))
+      stop(sprintf('File already exists: %s',
+                   toString(paste(outshape, c('shp', 'shx', 'dbf'),
+                                  sep='.')[f.exists])), call.=FALSE)
+  } else outshape <- tempfile()
+  
+  writeRaster(x, {f <- tempfile(fileext='.tif')})
+  rastpath <- normalizePath(f)
+  
+  system2('python', args=(sprintf('"%1$s" "%2$s" -f "%3$s" "%4$s.shp"',
+                                  pypath, rastpath, gdalformat, outshape)))
+  shp <- readOGR(dirname(outshape), layer = basename(outshape))
+  crs(shp)=crs(x)
+  
+  shp=shp[shp$DN!=0,]
+  
+  polys=shp
+  
+  require(rgeos)
+  require(maptools)
+  
+  disMatr=gDistance(polys,polys,byid=T)
+  disMatr=as.data.frame(disMatr)
+  n=dim(disMatr)[1]
+  
+  polys$id=1:n
+  
+  for (i in 1:n){
+    polys$id[disMatr[,i]==0]=polys$id[i]
+  }
+  
+  groups=polys$id
+  polys2=unionSpatialPolygons(polys,groups)
+  n2=length(polys2)
+  
+  polys3=SpatialPolygonsDataFrame(polys2,data=data.frame(ID=1:n2), match.ID = F)
+  return(polys3)
+  
+  setwd(dir)
+}
+
+
 
 ########### Method 1 -- Randomly Select Infested Pixel for Treatment ################
 ## Randomly select infested pixels based on budget and cost per unit ##
 
-random_pixel=function(inf,buffer,budget,cost_per_meter_sq,pixelArea){
+random_pixel=function(inf,buffer,budget,cost_per_meter_sq){
   
   area=budget/cost_per_meter_sq
   
-  inf2=inf
-  k<- which(inf2[]==0)
-  inf2[k]=NA
+  pixelArea=xres(inf)*yres(inf)
   
+  inf2=inf
   inf2[inf2==0]=NA
+
   n=floor(area/pixelArea)+2
   
   rd=sampleRandom(inf2,size=n,na.rm=T,asRaster=T)
@@ -56,32 +115,35 @@ random_pixel=function(inf,buffer,budget,cost_per_meter_sq,pixelArea){
 
 
 
-########### Method 2 -- Select infested pixels for treatment based on total number 
-        ## of uninfested host within the given width of buffer area of each pixel ##
+########### Method 2 -- Select infested pixels for treatment based on total number #######
+## of uninfested host within the given width of buffer area of each pixel ##
 
 # idealy, the width should be choosen based on the dispersal ability of targeted species
-Thost <- function(ra_ply,width,ply,host){
+Thost <- function(inf, ra_ply,width,ply,host, ncore){
   
-  
+  host[inf>0]=0
+  host = host/host
   ply_bf=buffer(ra_ply,width,dissolve=F)
-  ply2=gUnionCascaded(ply)
-  ply2=gBuffer(ply2,width=0)
+  #ply2=gUnionCascaded(ply)
+  #ply2=gBuffer(ply2,width=0)
   
   library(parallel)
   library(foreach)
   library(doParallel)
   library(rgeos)
   
-  cl <- makeCluster(detectCores()-2)
+  cl <- makeCluster(ncore)
   registerDoParallel(cl)
   
-  hostN=foreach (i=1:dim(ply_bf)[1],.combine=rbind,.errorhandling = "pass",  .export=c('gDifference'), .packages=c('raster',"rgdal","rgeos")) %dopar% {
+  hostN=foreach (i=1:dim(ply_bf)[1],.combine=rbind,.errorhandling = "pass", .packages=c('raster',"rgdal","rgeos")) %dopar% {
     #gDifference(plybuf[i,],ply[i,])
-    buff_only=gBuffer(ply_bf[i,],width=0)
-    buff_only2=gDifference(buff_only, ply2)
-    va=try(extract(host,buff_only2,na.rm=T,fun=sum))
+    
+    #buff_only=gBuffer(ply_bf[i,],width=0)
+    buff_only2=gDifference(ply_bf[i,], ra_ply[i])
+    va=tryCatch(extract(host,buff_only2,na.rm=T,fun=sum))
     if (class(va)=="try-error"){va=0}
-    else {va=extract(host,buff_only2,na.rm=T,fun=sum)}
+    else {va=va}
+    
     return(va) 
   }
   
@@ -93,15 +155,16 @@ Thost <- function(ra_ply,width,ply,host){
   return(ra_ply)
 }
 
-threat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq,pixelArea){
+ threat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq,ncore){
   
   area=budget/cost_per_meter_sq
+  pixelArea=xres(inf)*yres(inf)
   
   ra_ply=rasterToPolygons(inf,fun=function(x){x>0},dissolve = F)
   
-  ra_ply=Thost(ra_ply,width,ply,host)
+  ra_ply=Thost(inf, ra_ply,width,ply,host, ncore)
   ra_ply2=ra_ply[order(ra_ply$Thst,decreasing = T),]
-
+  
   ply_bf=buffer(ra_ply2,width=buffer,dissolve=F)
   n=floor(area/pixelArea)
   ply_bf$Cumu_Area=0
@@ -135,28 +198,15 @@ threat_pixel=function(inf,width=1000,ply,host, budget, buffer, cost_per_meter_sq
 
 
 ########## Method 3 -- Select highest infested pixel  ###########
-
-Hinfest_pixel = function(inf,buffer,budget,cost_per_meter_sq,pixelArea){
+Hinfest_pixel = function(inf,buffer,budget,cost_per_meter_sq){
   
   area=budget/cost_per_meter_sq
+  pixelArea=xres(inf)*yres(inf)
   
+
   ra_ply=rasterToPolygons(inf,fun=function(x){x>0},dissolve = F)
+  names(ra_ply) = "infest_level"
   
-  # derive buffer size 
-  library(parallel)
-  library(foreach)
-  library(doParallel)
-  
-  cl <- makeCluster(detectCores()-2)
-  registerDoParallel(cl)
-  
-  infest_level=foreach (i=1:length(ra_ply),.errorhandling = "pass", .combine=rbind, .export=c('extract'), .packages=c('raster',"rgdal")) %dopar% {
-    extract(inf,ra_ply[i,],fun=mean)
-  }
-  
-  stopCluster(cl)
-  
-  ra_ply$infest_level=as.data.frame(infest_level)[,1]
   
   ra_ply2=ra_ply[order(ra_ply$infest_level,decreasing = T),]
   ply_bf=buffer(ra_ply2,width=buffer,dissolve=F)
@@ -213,7 +263,9 @@ wvfrt = function(inf){
   return(lns)
 }
 
-wvfrt_pixel = function(inf,buffer,budget, cost_per_meter_sq, pixelArea){
+wvfrt_pixel = function(inf,buffer,budget, cost_per_meter_sq){
+  
+  pixelArea=xres(inf)*yres(inf)
   
   # get wavefront, lns is spatial Line
   lns=wvfrt(inf)
@@ -254,6 +306,7 @@ wvfrt_pixel = function(inf,buffer,budget, cost_per_meter_sq, pixelArea){
   
 }
 
+
 ######### Method 5  -- wavefront method weighted by hazard ########
 
 wvfrt = function(inf){
@@ -276,17 +329,56 @@ wvfrt = function(inf){
   return(lns)
 }
 
-wvfrtHzd = function(inf,width=1000, distance_classes=6, host,buffer,budget,  cost_per_meter_sq, pixelArea){
+wvfrtHzd = function(inf, distance_classes, host,buffer,budget,  cost_per_meter_sq, a, rep, np){
   
   # get wavefront, lns is spatial Line
   lns=wvfrt(inf)
+  pixelArea=xres(inf)*yres(inf)
   
   ra_ply=rasterToPolygons(inf,fun=function(x){x>0},dissolve = F)
   distance=gDistance(lns, ra_ply, byid=T)
   
   ra_ply$dis_frtwv=distance[1:length(ra_ply)]
+  
+  ## derive  ip ##
+  host_uninf = host
+  host_uninf[inf>0]=0
+  
+  
+  inf_pts = rasterToPoints(inf,fun=function(x){x>0} ,spatial=T)
+  names(inf_pts)="inf_level"
+  n = length(inf_pts)
+  wc_va = extract(Wcoef,inf_pts)
+  inf_pts$inf_level = inf_pts$inf_level 
+  
+  host_pts = rasterToPoints(host_uninf, fun=function(x){x>0}, spatial=T)
+  names(host_pts)="host"
+
+  
+  cl = makeCluster(ncore)
+  registerDoParallel(cl) 
+  
+  ip_va = foreach(i=1:n, .combine=rbind, .packages = c('raster','rgdal','geosphere','rgeos'))%dopar%{
+    dist= gDistance(inf_pts[i,], host_pts,byid=T)
+    
+    dist2 = 1/(dist^2 + a^2)
+    dist2[dist>10000] = 0
+    #dist2[dist>5000] = 0
+    
+    #infe_pot = (inf_pts$inf_level[i]*rep)^np*dist2*host_pts$host
+    
+    infe_pot = inf_pts$inf_level[i]*rep*wc_va[i]*np*dist2*host_pts$host
+    #infe_pot = (inf_pts$inf_level[i]*rep*wc_va[i])^np*dist2*host_pts$host
+    
+    infe_potS = sum(infe_pot)
+    return(infe_potS)
+  }
+  
+  stopCluster(cl)
+  
+  ra_ply$ip = as.vector(ip_va)
   ra_ply2=ra_ply[order(ra_ply$dis_frtwv,decreasing = F),]
-  ra_ply2=Thost(ra_ply2,width,ply,host)
+  
   
   # based on the distance to wave front, classify all infested pixels/polygons into 
   # 6 classes using kmeans
@@ -297,6 +389,14 @@ wvfrtHzd = function(inf,width=1000, distance_classes=6, host,buffer,budget,  cos
   group <- kmeans(ra_ply2$dis_frtwv, centers = centers)$cluster
   ra_ply2$group=group
   
+  rank = ra_ply2[1,]
+  for (i in 1:distance_classes){
+    sub = ra_ply2[ra_ply2$group==i,]
+    sub2 =sub[order(sub$ip,decreasing = T),]
+    rank=rbind(rank, sub2)
+  }
+  rank =rank[-1,]
+  ra_ply2= rank
   
   ply_bf=buffer(ra_ply2,width=buffer,dissolve=F)
   
@@ -311,28 +411,21 @@ wvfrtHzd = function(inf,width=1000, distance_classes=6, host,buffer,budget,  cos
   
   
   ply_select=ply_bf[ply_bf$Cumu_Area< area & ply_bf$Cumu_Area!=0,]
-  ply_Nonselect=ply_bf[ply_bf$Cumu_Area> area,]
-  
-  #get the group of the first pixel/polyon in the non selected pixel/polyon
-  group_firstNsel=ply_Nonselect$group[1]
+  ply_Nonselect=ply_bf[ply_bf$Cumu_Area> area | ply_bf$Cumu_Area==0,]
   
   
-  ply_groups1=ply_bf[ply_bf$group<=group_firstNsel-1,]
-  ply_groups2=ply_bf[ply_bf$group==group_firstNsel,]
-  ply_groups2b= ply_groups2[order(ply_groups2$Thst,decreasing = T),]
+  df= area - max(ply_select$Cumu_Area)
   
-  ply_groups=rbind(ply_groups1,ply_groups2b)
-  
-  for (i in 1:length(ply_groups)){
-    trt=gUnionCascaded(ply_groups[1:i,])
-    ply_groups$Cumu_Area[i]=area(trt)
+  for (i in 1:length(ply_Nonselect)){
+    trt=gUnionCascaded(ply_Nonselect[1:i,])
+    ply_Nonselect$Cumu_Area[i]=area(trt)
   }
   
-  treatment=ply_groups[ply_groups$Cumu_Area<=area,]
+  treatment=rbind(ply_select, ply_Nonselect[ply_Nonselect$Cumu_Area<=df,])
   treatment=gUnionCascaded(treatment)
   
   df=area-area(treatment)
-  nontr=ply_groups[ply_groups$Cumu_Area>area,]
+  nontr=ply_Nonselect[ply_Nonselect$Cumu_Area>df,]
   
   if (df>0){
     crds=gCentroid(nontr[1,])
@@ -342,14 +435,13 @@ wvfrtHzd = function(inf,width=1000, distance_classes=6, host,buffer,budget,  cos
   
   treatmentRa=rasterize(treatment,inf,field=1,background=0,getCover=T)
   treatmentLs=list(as.matrix(treatmentRa)) 
- 
+  
   return(treatmentLs)
-    
+  
 }
 
 
-#### Below is the best method ####
-####### Method 6 -- Infestation Potential  --- Calculated based on infestation level, host availability, dispersal kernel, and weather coefficient ######
+#################### Method 6 --  infestation potential  #####################
 ip_rank = function(inf, host, np, a, rep, Wcoef, ncore){
   
   host_uninf = host
@@ -364,10 +456,10 @@ ip_rank = function(inf, host, np, a, rep, Wcoef, ncore){
   
   host_pts = rasterToPoints(host_uninf, fun=function(x){x>0}, spatial=T)
   names(host_pts)="host"
-  host_wether = extract(Wcoef, host_pts)
+  #host_wether = extract(Wcoef, host_pts)
   #host_pts$host = host_pts$host/host_pts$host
-  host_pts$host =  host_pts$host * host_wether
-  host_pts$host =  host_pts$host
+  #host_pts$host =  host_pts$host * host_wether
+  #host_pts$host =  host_pts$host
   
   
   #inf_pts = spTransform(inf_pts, CRS("+init=epsg:4326"))
@@ -381,11 +473,13 @@ ip_rank = function(inf, host, np, a, rep, Wcoef, ncore){
     
     dist2 = 1/(dist^2 + a^2)
     dist2[dist>10000] = 0
-    dist2[dist>5000] = 0
+    #dist2[dist>5000] = 0
     
     #infe_pot = (inf_pts$inf_level[i]*rep)^np*dist2*host_pts$host
     
     infe_pot = inf_pts$inf_level[i]*rep*wc_va[i]*np*dist2*host_pts$host
+    #infe_pot = (inf_pts$inf_level[i]*rep*wc_va[i])^np*dist2*host_pts$host
+    
     infe_potS = sum(infe_pot)
     return(infe_potS)
   }
@@ -429,98 +523,5 @@ ip_treat = function(ip_rank_ply, budget, buffer, cost_per_meter_sq, inf){
   treatmentRa=rasterize( treatment,inf,field=1,background=0,getCover=T)
   treatmentLs=list(as.matrix(treatmentRa))
   return(treatmentLs)
-}
-
-
-######## Method 7 --  based on number of uninfested host within different  ####
-        ## size of buffer for each pixel, the buffer size is determined based on 
-        ## dispersal kernel and climatic factors
-
-
-## Calculate buffer size round each pixel
-range_m6 = function(inf, dispersal_rate,reproductive_rate,Nstep,Wcoef){
   
-  
-  a=dispersal_rate/2
-  rep=reproductive_rate
-  n=Nstep-1
-  
-  propa=inf*((rep*Wcoef)^n)
-  
-  dis_buf=function(a,propa){
-    #y=(exp(-x/a)/(2*pi*a))
-    #pden=propa*y
-    x=-a*log(2*pi*a/propa)
-    return(x)
-  }
-  
-  buf= dis_buf(a,propa)
-  buf[buf<0]=0.01
-  
-  return(buf)
-}
-
-## derive number of uninfested host within the buffer size for each pixel
-host_m6= function(inf,dispersal_rate,reproductive_rate,Nstep,Wcoef,ply,host){
-  ra_ply=rasterToPolygons(inf,fun=function(x){x>0},dissolve = F)
-  buf=range_m6(inf, dispersal_rate,reproductive_rate,Nstep,Wcoef)
-  
-  # derive buffer size 
-  library(parallel)
-  library(foreach)
-  library(doParallel)
-  
-  cl <- makeCluster(detectCores()-2)
-  registerDoParallel(cl)
-  
-  buf_size=foreach (i=1:length(ra_ply),.errorhandling = "pass", .combine=rbind, .export=c('extract'), .packages=c('raster',"rgdal")) %dopar% {
-    extract(buf,ra_ply[i,],fun=mean)
-  }
-  
-  stopCluster(cl)
-  
-  ra_ply$buf_size=as.data.frame(buf_size)[,1]
-  ply_bf=buffer(ra_ply,width=ra_ply$buf_size,dissolve=F)
-  
-  
-  # calculate number of uninfested host within the buffer for each infested pixel/polygon
-  ply_bf2= Thost(ply_bf,width=0,ply,host)
-  ra_ply$Nhost=ply_bf2$Thst
-  
-  return(ra_ply)
-}
-
-## select treated pixel/poly based on the number of threatened host
-
-treat_m6 = function(inf,dispersal_rate,reproductive_rate,Nstep,Wcoef,ply,host, budget, buffer,cost_per_meter_sq,pixelArea){
-  ra_ply= host_m6(inf,dispersal_rate,reproductive_rate,Nstep,Wcoef,ply,host)
-  ra_ply2=ra_ply[order(ra_ply$Nhost,decreasing = T),]
-  
-  area=budget/cost_per_meter_sq
-  
-  ply_bf=buffer(ra_ply2,width=buffer,dissolve=F)
-  n=floor(area/pixelArea)+2
-  ply_bf$Cumu_Area=0
-  
-  for (i in 1:n){
-    trt=gUnionCascaded(ply_bf[1:i,])
-    ply_bf$Cumu_Area[i]=area(trt)
-  }
-  
-  treatment=ply_bf[ply_bf$Cumu_Area<= area & ply_bf$Cumu_Area!=0,]
-  treatment=gUnionCascaded(treatment)
-  
-  df=area-area(treatment)
-  nontr=ply_bf[ply_bf$Cumu_Area> area,]
-  
-  if (df>0){
-    crds=gCentroid(nontr[1,])
-    crds_bf=buffer(crds,width=sqrt(df/pi))
-    treatment=gUnion(treatment,crds_bf)
-  }
-  
-  treatmentRa=rasterize( treatment,inf,field=1,background=0,getCover=T)
-  treatmentLs=list(as.matrix(treatmentRa))
-  return(treatmentLs)
-
 }
