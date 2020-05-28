@@ -1,5 +1,4 @@
 ## Step 1 -- rank each pixel based on infestation potential  ##
-
 # inf: infestation raster; 
 # host: host map;  
 # np: number of step, this parameter doesn't really matter, but need to be a postive number
@@ -58,11 +57,11 @@ ip_rank = function(inf, host, np, a, rep, Wcoef, range_buffer,ncore){
 }
 
 # Step 2 -- select pixels for treatment based on rank of infestation potential #
-# ip_rank_ply: return of the ip_rank function (polygon dataframe)
+# ip_rank_ply: return of the ip_rank function (polygon dataframe), each polygon in the polygon dataframe is one infested pixel
+              # the polygons are already ranked based on the infestation potential (ip) in a way that the first polgyon has the highest ip
 # inf : infestation raster
 # budget, cost_per_meter_sq : the same variables in your functions
 # buffer: treatment buffer (in meter)
-
 ip_treat = function(ip_rank_ply, budget, buffer, cost_per_meter_sq, inf){
   
   area=budget/cost_per_meter_sq
@@ -73,14 +72,17 @@ ip_treat = function(ip_rank_ply, budget, buffer, cost_per_meter_sq, inf){
   n=floor(area/pixelArea)+2
   ply_bf$Cumu_Area=0
   
+  # 
   for (i in 1:n){
     trt=gUnionCascaded(ply_bf[1:i,])
     ply_bf$Cumu_Area[i]=area(trt)
   }
   
+  # select pixels together with the treatment buffer whoes total area is not larger than the budget allowed
   treatment=ply_bf[ply_bf$Cumu_Area<= area & ply_bf$Cumu_Area!=0,]
   treatment=gUnionCascaded(treatment)
   
+  # if the selected treatment area is smaller than budget allowed, select part of the next infested pixel
   df=area-area(treatment)
   nontr=ply_bf[ply_bf$Cumu_Area> area,]
   
