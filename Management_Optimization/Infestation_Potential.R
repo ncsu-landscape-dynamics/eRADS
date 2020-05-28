@@ -18,8 +18,9 @@ ip_rank = function(inf, host, np, a, rep, Wcoef, range_buffer,ncore){
   # to easier calculate distance between infested pixel and susceptible host
   inf_pts = rasterToPoints(inf,fun=function(x){x>0} ,spatial=T)
   names(inf_pts)="inf_level"
-  wc_va = extract(Wcoef,inf_pts)
   inf_pts$inf_level = inf_pts$inf_level 
+  # extract weather_coefficient for each infested pixel/points          
+  wc_va = extract(Wcoef,inf_pts)
   
   host_pts = rasterToPoints(host_uninf, fun=function(x){x>0}, spatial=T)
   names(host_pts)="host"
