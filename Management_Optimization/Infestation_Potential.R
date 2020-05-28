@@ -4,7 +4,7 @@
 # np: number of step, this parameter doesn't really matter, but need to be a postive number
 # a : natural dispersal scale
 # rep: reproduction rate
-# Wcoef: mean weather coefficient fraster or the simulated time period (mean for every year or the whole simulation period)
+# Wcoef: mean weather coefficient raster of the simulated time period (mean for every year or the whole simulation period)
 # range_buffer: a number for distance in meter, for a given infested pixel, only consider susceptible hosts within this range,
             # this number should be a reasonable large number impacted by the natural dispersal rate
 # ncore: number of cores used for calculation
