@@ -8,6 +8,109 @@
 # range_buffer: a number for distance in meter, for a given infested pixel, only consider susceptible hosts within this range,
             # this number should be a reasonable large number impacted by the natural dispersal rate
 # ncore: number of cores used for calculation
+ip_fun = function(crds_list, pts_host, range_buffer){
+  
+  df = as.data.frame(matrix(crds_list, ncol=2))
+  pts = SpatialPoints(df)
+  
+  pts_bf = buffer(pts, range_buffer)
+  host2 = crop(host_uninf, pts_bf)
+  host_pts2 = rasterToPoints(host2, fun=function(x){x>0}, spatial=T)
+  
+  dist =  pointDistance(pts, host_pts2, lonlat=F,allpairs = T) 
+  dist2 = 1/(dist^2 + a^2)
+  dist2[dist>range_buffer] = 0
+  
+  return(dist2)
+}
+
+# ncore not really used in this version of ip_rank function, but might be used in the future
+ip_rank = function(inf, host, np, a, rep, Wcoef, range_buffer,ncore){
+  # only counts susceptible hosts for the infestation potential 
+  host_uninf = host
+  host_uninf[inf>0]=0
+  
+  # covert infestation and host raster to points to get raster values and 
+  # to easier calculate distance between infested pixel and susceptible host
+  inf_pts = rasterToPoints(inf,fun=function(x){x>0} ,spatial=T)
+  names(inf_pts)="inf_level"
+  wc_va = extract(Wcoef,inf_pts)
+  inf_pts$inf_level = inf_pts$inf_level 
+  
+  host_pts = rasterToPoints(host_uninf, fun=function(x){x>0}, spatial=T)
+  names(host_pts)="host"
+  host_pts$host = 1
+  
+  
+  crds_list <- split(inf_pts@coords, seq(length(inf_pts)))
+  ts = sapply(crds_list, ip_fun,  pts_host = host_pts,  range_buffer= range_buffer)
+ 
+  # so the calculation of infestation potential is: 
+  #(dispersal kernel)* (infestation level)* (reproduction rate) * (weather coefficient of the infested pixel) * (number of step) * (host abundence)
+  #infe_pot = inf_pts$inf_level[i]*rep*wc_va[i]*np*dist2*host_pts$host
+  #infe_pot = inf_pts$inf_level[i]*wc_va[i]*dist2*host_pts$host
+  #infe_potS = sum(infe_pot)
+  
+  infe_pot = lapply(1:length(inf_pts), function(x) {ts[[x]]*inf_pts$inf_level[x]*wc_va[x]})
+  infe_potS = lapply(1:length(inf_pts), function(x){sum(infe_pot[[x]])})
+  ip_va = as.vector(unlist(infe_potS))
+  
+  inf_pts$ip = ip_va
+  inf_ply = rasterToPolygons(inf, fun=function(x){x>0},na.rm = T)
+  inf_ply$ip = inf_pts$ip
+  inf_ply2 = inf_ply[order(inf_ply$ip,decreasing = T),]
+  #inf_pts2 = spTransform(inf_pts2, crs(inf))
+  return(inf_ply2)
+}
+
+
+
+# Step 2 -- select pixels for treatment based on rank of infestation potential #
+# ip_rank_ply: return of the ip_rank function (polygon dataframe), each polygon in the polygon dataframe is one infested pixel
+              # the polygons are already ranked based on the infestation potential (ip) in a way that the first polgyon has the highest ip
+# inf : infestation raster
+# budget, cost_per_meter_sq : the same variables in your functions
+# buffer: treatment buffer (in meter)
+ip_treat = function(ip_rank_ply, budget, buffer, cost_per_meter_sq, inf){
+  
+  area=budget/cost_per_meter_sq
+  pixelArea=xres(inf)*yres(inf)
+  
+  
+  ply_bf=buffer(ip_rank_ply,width=buffer,dissolve=F)
+  n=floor(area/pixelArea)+2
+  ply_bf$Cumu_Area=0
+  
+  # 
+  for (i in 1:n){
+    trt=gUnionCascaded(ply_bf[1:i,])
+    ply_bf$Cumu_Area[i]=area(trt)
+  }
+  
+  # select pixels together with the treatment buffer whoes total area is not larger than the budget allowed
+  treatment=ply_bf[ply_bf$Cumu_Area<= area & ply_bf$Cumu_Area!=0,]
+  treatment=gUnionCascaded(treatment)
+  
+  # if the selected treatment area is smaller than budget allowed, select part of the next infested pixel
+  df=area-area(treatment)
+  nontr=ply_bf[ply_bf$Cumu_Area> area,]
+  
+  if (df>0){
+    crds=gCentroid(nontr[1,])
+    crds_bf=buffer(crds,width=sqrt(df/pi))
+    treatment=gUnion(treatment,crds_bf)
+  }
+  
+  treatmentRa=rasterize( treatment,inf,field=1,background=0,getCover=T)
+  treatmentLs=list(as.matrix(treatmentRa))
+  return(treatmentLs)
+  
+}
+
+
+
+
+############## Old ip_rank function, very slow  ##############
 ip_rank = function(inf, host, np, a, rep, Wcoef, range_buffer,ncore){
   
   # only counts susceptible hosts for the infestation potential 
@@ -57,44 +160,3 @@ ip_rank = function(inf, host, np, a, rep, Wcoef, range_buffer,ncore){
   return(inf_ply2)
 }
 
-# Step 2 -- select pixels for treatment based on rank of infestation potential #
-# ip_rank_ply: return of the ip_rank function (polygon dataframe), each polygon in the polygon dataframe is one infested pixel
-              # the polygons are already ranked based on the infestation potential (ip) in a way that the first polgyon has the highest ip
-# inf : infestation raster
-# budget, cost_per_meter_sq : the same variables in your functions
-# buffer: treatment buffer (in meter)
-ip_treat = function(ip_rank_ply, budget, buffer, cost_per_meter_sq, inf){
-  
-  area=budget/cost_per_meter_sq
-  pixelArea=xres(inf)*yres(inf)
-  
-  
-  ply_bf=buffer(ip_rank_ply,width=buffer,dissolve=F)
-  n=floor(area/pixelArea)+2
-  ply_bf$Cumu_Area=0
-  
-  # 
-  for (i in 1:n){
-    trt=gUnionCascaded(ply_bf[1:i,])
-    ply_bf$Cumu_Area[i]=area(trt)
-  }
-  
-  # select pixels together with the treatment buffer whoes total area is not larger than the budget allowed
-  treatment=ply_bf[ply_bf$Cumu_Area<= area & ply_bf$Cumu_Area!=0,]
-  treatment=gUnionCascaded(treatment)
-  
-  # if the selected treatment area is smaller than budget allowed, select part of the next infested pixel
-  df=area-area(treatment)
-  nontr=ply_bf[ply_bf$Cumu_Area> area,]
-  
-  if (df>0){
-    crds=gCentroid(nontr[1,])
-    crds_bf=buffer(crds,width=sqrt(df/pi))
-    treatment=gUnion(treatment,crds_bf)
-  }
-  
-  treatmentRa=rasterize( treatment,inf,field=1,background=0,getCover=T)
-  treatmentLs=list(as.matrix(treatmentRa))
-  return(treatmentLs)
-  
-}
