@@ -7,6 +7,8 @@
 # Wcoef: mean weather coefficient raster of the simulated time period (mean for every year or the whole simulation period)
 # range_buffer: a number for distance in meter, for a given infested pixel, only consider susceptible hosts within this range,
             # this number should be a reasonable large number impacted by the natural dispersal rate
+            # suggest value is to run pops_model without treatment (for multiple runs), and get the median spread rate for each direction, 
+            # then take the minimum value among the four median rates
 # ncore: number of cores used for calculation
 
 
