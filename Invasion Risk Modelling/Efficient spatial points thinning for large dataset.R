@@ -1,5 +1,7 @@
 ## for occurrence data, remove points with distance <dist to decrease potential data biase
-
+# pts: spatial points
+# dist: number 
+# ncore: integer, number of cores to use
 
 dis_filter_largeData = function(pts, dist, ncore){
   
