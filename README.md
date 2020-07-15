@@ -38,4 +38,5 @@
 <h2> Invasion Risk Modeling </h2>
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Invasion%20Risk%20Modelling/Maxent-R-Parallel-iNaturalist-Data.Rmd"> 1. Maxent Parallel SDM in R </a> </h3>
 <h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Invasion%20Risk%20Modelling/Efficient%20spatial%20points%20thinning%20for%20large%20dataset.R">2. Efficient spatial points thinning for large dataset to decrease potential sampling biase</h3>
+<h3> <a href="https://github.com/wanwanliang/Spatial-Aanalysis-with-R-Python/blob/master/code/Coarse%20Estimation%20of%20Spread%20Rate%20--%20Boundary%20Displacement%20Method.R"> Estimate spread rate using Boundary Displacement method </h3>
 <br/>
