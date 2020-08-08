@@ -4,12 +4,8 @@
 <div align="center"><h2>Table of Content (Navigation Link) </h2></div>
 
 <h2> GEE (Python) Host Mapping </h2>
-<h3> <a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/GEE%20--%20NAIP%20Segmentation.ipynb"> 1. NAIP Image Segmentation </a> </h3>
-<h3><a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/NAIP--OBIA.ipynb">2. Refine Open-Science Presences -- Find Trees within 10-m of The Presences</a></h3>
-<h3><a href="https://nbviewer.jupyter.org/github/ncsu-landscape-dynamics/eRADS/blob/master/GEE_Host_Mapping/Refine%20Open-Science%20Presences%20--%20Clustering%20Segments.ipynb">3. Refine Open-Science Presences -- Clustering Segments/Objects</a></h3>
-<h3><a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/Refine%20Presences%20Data--%20Export%20Major%20Cluster%20of%20Presences.ipynb">4. Refine Open-Science Presences -- Export Larggest Cluster as Feature</a></h3>
-<h3><a href="https://nbviewer.jupyter.org/github/ncsu-landscape-dynamics/eRADS/blob/master/GEE_Host_Mapping/TOH_Report1.ipynb">5. Summary 1-4 -- Host (TOH) Mapping </a></h3>
-<h3><a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/Plot%20Points%20and%20Processing%20Crop%20layer.ipynb">6. Interactive map for points and Process Crop_layer </a></h3>
+<h3><a href="https://nbviewer.jupyter.org/github/ncsu-landscape-dynamics/eRADS/blob/master/GEE_Host_Mapping/TOH_Report1.ipynb">1. NAIP Image Processing -- Host (TOH) Mapping </a></h3>
+<h3><a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/Plot%20Points%20and%20Processing%20Crop%20layer.ipynb">2. Interactive map for points and Process Crop_layer </a></h3>
 
 <br/><br/>
 
