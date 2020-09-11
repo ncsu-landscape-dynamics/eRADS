@@ -3,11 +3,11 @@
 <br/>
 <div align="center"><h2>Table of Content (Navigation Link) </h2></div>
 
-<h2> eRADS Code </h2>
-<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/eRADS_Workflow_Functions.R">1.eRADS workflow functions </a></h3>
+<h2> eRADS Project</h2>
+<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/eRADS_Workflow_Functions.R">1. eRADS workflow functions </a></h3>
 <h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/eRADS_Workflow_CaseStudy.R">2. eRADS workflow case study </a></h3>
-<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/Function_List_Paras.RR">1.eRADS workflow list of functions and parameters </a></h3>
-<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/Host_Mapping.ipynb">2. Host mapping with cropland layer and open-science presence point data </a></h3>
+<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/Function_List_Paras.RR">3. eRADS workflow list of functions and parameters </a></h3>
+<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/Host_Mapping.ipynb">4. Host mapping with cropland layer and open-science presence point data </a></h3>
 
 
 <br/><br/>
