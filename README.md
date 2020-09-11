@@ -7,7 +7,7 @@
 <h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/eRADS_Workflow_Functions.R">1. eRADS workflow functions </a></h3>
 <h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/eRADS_Workflow_CaseStudy.R">2. eRADS workflow case study </a></h3>
 <h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/Function_List_Paras.R">3. eRADS workflow list of functions and parameters </a></h3>
-<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/Host_Mapping.ipynb">4. Host mapping with cropland data layer and open-science presence point data </a></h3>
+<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/Host_Mapping.ipynb">4. Host mapping with cropland data layer and open-science presence point data (with google colab and earth engine) </a></h3>
 
 
 <br/><br/>
