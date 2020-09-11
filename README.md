@@ -3,9 +3,12 @@
 <br/>
 <div align="center"><h2>Table of Content (Navigation Link) </h2></div>
 
-<h2> GEE (Python) Host Mapping </h2>
-<h3><a href="https://nbviewer.jupyter.org/github/ncsu-landscape-dynamics/eRADS/blob/master/GEE_Host_Mapping/TOH_Report1.ipynb">1. NAIP Image Processing -- Host (TOH) Mapping </a></h3>
-<h3><a href="https://nbviewer.jupyter.org/github/wanwanliang/GEE-Python/blob/master/code/Plot%20Points%20and%20Processing%20Crop%20layer.ipynb">2. Interactive map for points and Process Crop_layer </a></h3>
+<h2> eRADS Code </h2>
+<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/eRADS_Workflow_Functions.R">1.eRADS workflow functions </a></h3>
+<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/eRADS_Workflow_CaseStudy.R">2. eRADS workflow case study </a></h3>
+<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/Function_List_Paras.RR">1.eRADS workflow list of functions and parameters </a></h3>
+<h3><a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/eRADS_Workflow/Host_Mapping.ipynb">2. Host mapping with cropland layer and open-science presence point data </a></h3>
+
 
 <br/><br/>
 
@@ -17,7 +20,7 @@
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Management_Optimization/simulation%20of%20different%20host%20pattern%20using%20R">4. Simulation of different host pattern using R</a></h3>
 <br/>
 
-<h2> Mathematical Optimization </h2>
+<h2> Combinatorial Optimization </h2>
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Mathematical%20Optimization/Genetic%20Algorithm%20(GA)"> 1. GA Method </a>  </h3>
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Mathematical%20Optimization/Hybrid%20of%20GA%2BSA%2BTS"> 2. Hybrid of GA, SA, and TS </a>  </h3>
 <h3> <a href="https://github.com/ncsu-landscape-dynamics/eRADS/blob/master/Mathematical%20Optimization/Simulated%20Annealing%20(SA)%20%2B%20Tabu%20Search%20(TS)"> 3. Simulated Annealing (SA) and Tabu Search (TS) </a>  </h3>
